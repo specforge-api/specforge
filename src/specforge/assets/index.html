@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpecForge | Interactive API Studio & Contract Fuzzer</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- __SPECFORGE_CONFIG_INJECTION__ -->
+  <style>
+    :root {
+      --bg-base: #090d16;
+      --bg-surface: #0f172a;
+      --bg-card: #1e293b;
+      --bg-input: #0b1120;
+      --border: #334155;
+      --border-focus: #6366f1;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #f43f5e;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header */
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 50;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.025em;
+    }
+    .brand-icon {
+      width: 2rem;
+      height: 2rem;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.1rem;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+    }
+    .version-tag {
+      font-size: 0.75rem;
+      background: var(--bg-card);
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .nav-tabs {
+      display: flex;
+      background: var(--bg-input);
+      padding: 0.25rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      gap: 0.25rem;
+    }
+    .nav-tab {
+      padding: 0.4rem 1rem;
+      border-radius: 0.35rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .nav-tab:hover { color: var(--text-main); }
+    .nav-tab.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Main Container */
+    .app-body {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 57px);
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    aside {
+      width: 320px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-search {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--border-focus); }
+    .endpoint-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+    .endpoint-item {
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      margin-bottom: 0.25rem;
+      transition: background 0.15s ease;
+    }
+    .endpoint-item:hover { background: var(--bg-card); }
+    .endpoint-item.active { background: #263353; border-left: 3px solid var(--primary); }
+    
+    /* Method Badges */
+    .badge-method {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.2rem 0.45rem;
+      border-radius: 0.25rem;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+    }
+    .badge-get { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .badge-post { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+    .badge-put { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .badge-delete { background: rgba(244, 63, 94, 0.15); color: #f87171; }
+    .badge-patch { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+
+    /* Content Area */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Views */
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* Cards */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Try It Out Panel */
+    .try-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .editor-box {
+      width: 100%;
+      height: 220px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #38bdf8;
+      padding: 0.75rem;
+      resize: vertical;
+      outline: none;
+    }
+    .btn {
+      padding: 0.55rem 1.25rem;
+      border-radius: 0.4rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s ease;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+    .btn-outline:hover { background: var(--bg-card); }
+    .btn-success { background: var(--success); color: #fff; }
+
+    /* Test Dashboard */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+    .stat-number { font-size: 1.75rem; font-weight: 700; margin-top: 0.25rem; }
+    .stat-green { color: var(--success); }
+    .stat-yellow { color: var(--warning); }
+    .stat-red { color: var(--danger); }
+
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .test-table th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      background: var(--bg-input);
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .test-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .pill {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .pill-pass { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .pill-leak { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .pill-crash { background: rgba(244, 63, 94, 0.25); color: #f87171; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      width: 800px;
+      max-width: 90vw;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .code-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #f1f5f9;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <span id="app-title">SpecForge</span>
+      <span class="version-tag">v0.1.0</span>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-client-btn" onclick="switchTab('client')">
+        📖 API Explorer
+      </button>
+      <button class="nav-tab" id="tab-testing-btn" onclick="switchTab('testing')">
+        🧪 Boundary Test Suite
+      </button>
+    </div>
+
+    <div>
+      <button class="btn btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.8rem;" onclick="openPytestModal()">
+        🐍 Export to Pytest
+      </button>
+    </div>
+  </header>
+
+  <!-- Application Body -->
+  <div class="app-body">
+    <!-- Left Navigation Sidebar -->
+    <aside>
+      <div class="sidebar-search">
+        <input type="text" id="search-input" class="search-input" placeholder="Filter endpoints (e.g. POST /users)..." oninput="filterEndpoints()">
+      </div>
+      <div class="endpoint-list" id="endpoint-list">
+        <!-- Rendered via JS -->
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main>
+      <!-- View 1: API Explorer / Client -->
+      <div id="view-client" class="view-panel active">
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <span id="active-method-badge" class="badge-method badge-post">POST</span>
+            <h2 id="active-path" style="font-size: 1.2rem; font-weight: 700;">/api/v1/users</h2>
+          </div>
+          <p id="active-summary" style="color: var(--text-muted); font-size: 0.9rem;">Create a new user account with role verification</p>
+        </div>
+
+        <div class="try-layout">
+          <!-- Request Builder -->
+          <div class="card">
+            <div class="card-title">
+              <span>Request Body (JSON)</span>
+              <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="resetRequestBody()">Reset Example</button>
+            </div>
+            <textarea id="request-body-input" class="editor-box"></textarea>
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+              <button class="btn btn-primary" onclick="executeManualRequest()">
+                ▶ Send Request
+              </button>
+            </div>
+          </div>
+
+          <!-- Response Inspector -->
+          <div class="card">
+            <div class="card-title">
+              <span>Response</span>
+              <span id="response-status-badge" class="pill pill-pass" style="display:none;">200 OK</span>
+            </div>
+            <textarea id="response-viewer" class="editor-box" readonly placeholder="Send a request to inspect output..."></textarea>
+            <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+              <span id="response-latency">Latency: -- ms</span>
+              <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="copyResponse()">Copy Response</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Snippet Generator -->
+        <div class="card">
+          <div class="card-title">
+            <span>Generated Code Snippet</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="setSnippetLang('curl')">cURL</button>
+              <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="setSnippetLang('httpx')">Python (httpx)</button>
+              <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="setSnippetLang('requests')">Python (requests)</button>
+            </div>
+          </div>
+          <pre id="code-snippet-box" class="code-box">curl -X POST 'http://localhost:8000/api/v1/users' \
+  -H 'Content-Type: application/json' \
+  -d '{"username": "sample_user", "email": "user@example.com", "age": 25}'</pre>
+        </div>
+      </div>
+
+      <!-- View 2: Automated Boundary & Contract Testing Tab -->
+      <div id="view-testing" class="view-panel">
+        <div class="card" style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem;">Automated Boundary & Contract Fuzzer</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">
+              Probes string whitespace, empty values, numerical bounds, and detects unhandled 500 server crashes.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-primary" onclick="runAllBoundaryTests()">
+              ⚡ Run Boundary Test Suite
+            </button>
+            <button class="btn btn-outline" onclick="openPytestModal()">
+              🐍 Export to Pytest
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistics Badges -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Total Tests Planned</div>
+            <div id="stat-total" class="stat-number">0</div>
+          </div>
+          <div class="stat-card">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Cleanly Rejected (422/400)</div>
+            <div id="stat-pass" class="stat-number stat-green">0</div>
+          </div>
+          <div class="stat-card">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Schema Leaks (Accepted 200)</div>
+            <div id="stat-leak" class="stat-number stat-yellow">0</div>
+          </div>
+          <div class="stat-card">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Server Crashes (HTTP 500)</div>
+            <div id="stat-crash" class="stat-number stat-red">0</div>
+          </div>
+        </div>
+
+        <!-- Test Suite Table -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <table class="test-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Target Field</th>
+                <th>Mutation Strategy</th>
+                <th>Expected vs Actual</th>
+                <th>Latency</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="test-table-body">
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                  Click <strong>Run Boundary Test Suite</strong> to execute edge-case contract tests.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Pytest Code Export Modal -->
+  <div id="pytest-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 1.1rem; font-weight: 700;">Generated Pytest Contract Test Suite</h3>
+        <button onclick="closePytestModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Add this file to your <code>tests/test_api_contracts.py</code> to ensure these discovered boundary edge cases become permanent regression guards in CI.
+        </p>
+        <pre id="pytest-code-output" class="code-box"></pre>
+      </div>
+      <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn btn-outline" onclick="closePytestModal()">Close</button>
+        <button class="btn btn-primary" onclick="copyPytestCode()">Copy Pytest Code</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Runtime State
+    let activeSpec = null;
+    let operations = [];
+    let selectedOpIndex = 0;
+    let testCases = [];
+    let testResults = [];
+    let snippetLang = 'curl';
+
+    const config = window.__SPECFORGE_CONFIG__ || {
+      title: "SpecForge API Studio",
+      spec_url: "/openapi.json",
+      enable_tests: true
+    };
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (config.title) document.getElementById("app-title").textContent = config.title;
+      await loadSpecification();
+    });
+
+    async function loadSpecification() {
+      try {
+        if (config.embedded_spec) {
+          activeSpec = config.embedded_spec;
+        } else {
+          const res = await fetch(config.spec_url || "/openapi.json");
+          activeSpec = await res.json();
+        }
+        parseOperations();
+        renderEndpointList();
+        selectOperation(0);
+        synthesizeTestPlan();
+      } catch (err) {
+        console.error("Failed to load OpenAPI spec:", err);
+      }
+    }
+
+    function parseOperations() {
+      operations = [];
+      const paths = activeSpec.paths || {};
+      for (const [path, methods] of Object.entries(paths)) {
+        for (const [method, op] of Object.entries(methods)) {
+          if (!['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) continue;
+          operations.push({
+            method: method.toLowerCase(),
+            path: path,
+            summary: op.summary || path,
+            description: op.description || "",
+            raw: op
+          });
+        }
+      }
+    }
+
+    function renderEndpointList() {
+      const container = document.getElementById("endpoint-list");
+      container.innerHTML = "";
+      operations.forEach((op, index) => {
+        const item = document.createElement("div");
+        item.className = `endpoint-item ${index === selectedOpIndex ? 'active' : ''}`;
+        item.onclick = () => selectOperation(index);
+        item.innerHTML = `
+          <span class="badge-method badge-${op.method}">${op.method}</span>
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${op.path}</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function selectOperation(index) {
+      selectedOpIndex = index;
+      renderEndpointList();
+      const op = operations[index];
+      if (!op) return;
+
+      document.getElementById("active-method-badge").className = `badge-method badge-${op.method}`;
+      document.getElementById("active-method-badge").textContent = op.method.toUpperCase();
+      document.getElementById("active-path").textContent = op.path;
+      document.getElementById("active-summary").textContent = op.summary || op.description || "";
+
+      resetRequestBody();
+      updateCodeSnippet();
+    }
+
+    function resetRequestBody() {
+      const op = operations[selectedOpIndex];
+      const baseline = generateMockFromOp(op);
+      document.getElementById("request-body-input").value = JSON.stringify(baseline, null, 2);
+    }
+
+    function generateMockFromOp(op) {
+      const schema = op.raw?.requestBody?.content?.['application/json']?.schema;
+      if (!schema) return { message: "sample_payload" };
+      return generateMockFromSchema(schema);
+    }
+
+    function generateMockFromSchema(schema) {
+      if (schema.example) return schema.example;
+      if (schema.type === 'object' || schema.properties) {
+        const obj = {};
+        for (const [k, v] of Object.entries(schema.properties || {})) {
+          obj[k] = generateMockFromSchema(v);
+        }
+        return obj;
+      }
+      if (schema.type === 'string') {
+        if (schema.format === 'email') return "user@example.com";
+        return "sample_string";
+      }
+      if (schema.type === 'integer' || schema.type === 'number') return schema.minimum || 25;
+      if (schema.type === 'boolean') return true;
+      if (schema.type === 'array') return [];
+      return "value";
+    }
+
+    async function executeManualRequest() {
+      const op = operations[selectedOpIndex];
+      const bodyText = document.getElementById("request-body-input").value;
+      const statusBadge = document.getElementById("response-status-badge");
+      const viewer = document.getElementById("response-viewer");
+      const latencyLabel = document.getElementById("response-latency");
+
+      let payload = null;
+      if (['post', 'put', 'patch'].includes(op.method) && bodyText.trim()) {
+        try { payload = JSON.parse(bodyText); } catch(e) { alert("Invalid JSON body"); return; }
+      }
+
+      const startTime = performance.now();
+      try {
+        const opts = {
+          method: op.method.toUpperCase(),
+          headers: { 'Content-Type': 'application/json' }
+        };
+        if (payload) opts.body = JSON.stringify(payload);
+
+        const res = await fetch(op.path, opts);
+        const elapsed = Math.round(performance.now() - startTime);
+        const text = await res.text();
+
+        statusBadge.style.display = "inline-block";
+        statusBadge.textContent = `${res.status} ${res.statusText}`;
+        statusBadge.className = `pill ${res.ok ? 'pill-pass' : (res.status >= 500 ? 'pill-crash' : 'pill-leak')}`;
+        latencyLabel.textContent = `Latency: ${elapsed} ms`;
+
+        try {
+          viewer.value = JSON.stringify(JSON.parse(text), null, 2);
+        } catch {
+          viewer.value = text;
+        }
+      } catch (err) {
+        viewer.value = `Network or CORS error: ${err.message}`;
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      if (tab === 'client') {
+        document.getElementById("tab-client-btn").classList.add("active");
+        document.getElementById("view-client").classList.add("active");
+      } else {
+        document.getElementById("tab-testing-btn").classList.add("active");
+        document.getElementById("view-testing").classList.add("active");
+      }
+    }
+
+    // Fuzzing & Testing Generator
+    function synthesizeTestPlan() {
+      testCases = [];
+      operations.forEach(op => {
+        const schema = op.raw?.requestBody?.content?.['application/json']?.schema;
+        if (!schema || !schema.properties) return;
+        const baseline = generateMockFromSchema(schema);
+
+        // String Fuzzing
+        for (const [propName, propSchema] of Object.entries(schema.properties)) {
+          if (propSchema.type === 'string') {
+            testCases.push({
+              endpoint: op.path,
+              method: op.method,
+              field: propName,
+              category: "Whitespace: Multi-Space",
+              desc: `Rejects multi-space whitespace string for '${propName}'`,
+              payload: { ...baseline, [propName]: "     " },
+              expected: 422
+            });
+            testCases.push({
+              endpoint: op.path,
+              method: op.method,
+              field: propName,
+              category: "Boundary: Empty String",
+              desc: `Rejects empty string for '${propName}'`,
+              payload: { ...baseline, [propName]: "" },
+              expected: 422
+            });
+          } else if (propSchema.type === 'integer' || propSchema.type === 'number') {
+            testCases.push({
+              endpoint: op.path,
+              method: op.method,
+              field: propName,
+              category: "Boundary: Negative Number",
+              desc: `Rejects negative number for unsigned '${propName}'`,
+              payload: { ...baseline, [propName]: -1 },
+              expected: 422
+            });
+            testCases.push({
+              endpoint: op.path,
+              method: op.method,
+              field: propName,
+              category: "Type: Float into Integer",
+              desc: `Rejects non-integer float (42.5) for '${propName}'`,
+              payload: { ...baseline, [propName]: 42.5 },
+              expected: 422
+            });
+          }
+        }
+
+        // Required Omission
+        if (schema.required && schema.required.length > 0) {
+          schema.required.forEach(reqKey => {
+            const omitted = { ...baseline };
+            delete omitted[reqKey];
+            testCases.push({
+              endpoint: op.path,
+              method: op.method,
+              field: reqKey,
+              category: "Structure: Omit Required Key",
+              desc: `Rejects missing required field '${reqKey}'`,
+              payload: omitted,
+              expected: 422
+            });
+          });
+        }
+      });
+
+      document.getElementById("stat-total").textContent = testCases.length;
+    }
+
+    async function runAllBoundaryTests() {
+      const tbody = document.getElementById("test-table-body");
+      tbody.innerHTML = "";
+      let passCount = 0;
+      let leakCount = 0;
+      let crashCount = 0;
+
+      for (let i = 0; i < testCases.length; i++) {
+        const tc = testCases[i];
+        const start = performance.now();
+        let status = 0;
+        let respText = "";
+
+        try {
+          const res = await fetch(tc.endpoint, {
+            method: tc.method.toUpperCase(),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tc.payload)
+          });
+          status = res.status;
+          respText = await res.text();
+        } catch (e) {
+          status = 0;
+          respText = e.message;
+        }
+        const latency = Math.round(performance.now() - start);
+
+        let pillClass = "pill-pass";
+        let statusLabel = "PASS";
+        if (status >= 500) {
+          pillClass = "pill-crash";
+          statusLabel = "CRASH (500)";
+          crashCount++;
+        } else if (status >= 200 && status < 300) {
+          pillClass = "pill-leak";
+          statusLabel = "LEAK (200)";
+          leakCount++;
+        } else if (status === 400 || status === 422) {
+          pillClass = "pill-pass";
+          statusLabel = `PASS (${status})`;
+          passCount++;
+        } else {
+          pillClass = "pill-leak";
+          statusLabel = `${status}`;
+        }
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><span class="pill ${pillClass}">${statusLabel}</span></td>
+          <td><code>${tc.field}</code></td>
+          <td><strong>${tc.category}</strong><br><span style="color:var(--text-muted);font-size:0.75rem;">${tc.desc}</span></td>
+          <td>Expected ${tc.expected} | Got ${status}</td>
+          <td>${latency} ms</td>
+          <td><button class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="inspectTestPayload(${i})">Inspect</button></td>
+        `;
+        tbody.appendChild(tr);
+
+        document.getElementById("stat-pass").textContent = passCount;
+        document.getElementById("stat-leak").textContent = leakCount;
+        document.getElementById("stat-crash").textContent = crashCount;
+      }
+    }
+
+    function inspectTestPayload(idx) {
+      const tc = testCases[idx];
+      alert(`Mutated Payload Sent for '${tc.field}':\n\n` + JSON.stringify(tc.payload, null, 2));
+    }
+
+    function openPytestModal() {
+      let code = `# Auto-generated by SpecForge\\nimport pytest\\nimport httpx\\n\\nBASE_URL = "http://localhost:8000"\\n\\n@pytest.mark.parametrize("endpoint,method,payload,expected", [\\n`;
+      testCases.forEach(tc => {
+        code += `    ("${tc.endpoint}", "${tc.method.toUpperCase()}", ${JSON.stringify(tc.payload)}, ${tc.expected}),\\n`;
+      });
+      code += `])\\ndef test_contract_boundaries(endpoint, method, payload, expected):\\n    with httpx.Client(base_url=BASE_URL) as client:\\n        res = client.request(method, endpoint, json=payload)\\n        assert res.status_code != 500, "Server crashed with 500!"\\n        assert res.status_code == expected\\n`;
+
+      document.getElementById("pytest-code-output").textContent = code;
+      document.getElementById("pytest-modal").style.display = "flex";
+    }
+
+    function closePytestModal() {
+      document.getElementById("pytest-modal").style.display = "none";
+    }
+
+    function copyPytestCode() {
+      const text = document.getElementById("pytest-code-output").textContent;
+      navigator.clipboard.writeText(text);
+      alert("Pytest code copied to clipboard!");
+    }
+
+    function updateCodeSnippet() {
+      const op = operations[selectedOpIndex];
+      const payload = document.getElementById("request-body-input").value;
+      let snippet = "";
+      if (snippetLang === 'curl') {
+        snippet = `curl -X ${op.method.toUpperCase()} 'http://localhost:8000${op.path}' \\\n  -H 'Content-Type: application/json' \\\n  -d '${payload.replace(/'/g, "'\\''")}'`;
+      } else if (snippetLang === 'httpx') {
+        snippet = `import httpx\n\nresponse = httpx.${op.method}("http://localhost:8000${op.path}", json=${payload})\nprint(response.status_code, response.json())`;
+      } else if (snippetLang === 'requests') {
+        snippet = `import requests\n\nresponse = requests.${op.method}("http://localhost:8000${op.path}", json=${payload})\nprint(response.status_code, response.json())`;
+      }
+      document.getElementById("code-snippet-box").textContent = snippet;
+    }
+
+    function setSnippetLang(lang) {
+      snippetLang = lang;
+      updateCodeSnippet();
+    }
+  </script>
+</body>
+</html>

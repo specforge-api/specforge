@@ -1,0 +1,99 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "specforge"
+version = "0.1.0"
+description = "The interactive API client and automated contract testing engine for Python."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+authors = [
+    { name = "SpecForge Team" }
+]
+keywords = [
+    "openapi",
+    "swagger",
+    "fastapi",
+    "testing",
+    "contract-testing",
+    "fuzzing",
+    "api-client",
+    "pytest"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+dependencies = [
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+fastapi = ["fastapi>=0.100.0"]
+flask = ["flask>=2.0.0"]
+cli = ["typer>=0.9.0", "rich>=13.0.0"]
+all = [
+    "fastapi>=0.100.0",
+    "flask>=2.0.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0"
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "types-pyyaml",
+]
+
+[project.scripts]
+specforge = "specforge.cli.main:cli_entrypoint"
+
+[project.urls]
+Homepage = "https://github.com/specforge/specforge"
+Documentation = "https://github.com/specforge/specforge#readme"
+Repository = "https://github.com/specforge/specforge"
+Issues = "https://github.com/specforge/specforge/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/specforge"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
