@@ -96,6 +96,40 @@ specforge test http://localhost:8000/openapi.json --fail-on-500
 
 ---
 
+## 💻 Local Development & Testing Guide
+
+### 1. Run the Interactive Live Demo (Zero Dependencies)
+You can launch and explore SpecForge immediately using Python's standard library:
+```bash
+python examples/standalone_demo.py
+```
+Open **`http://localhost:8000/docs`** in your browser to:
+- Test API endpoints and inspect formatted JSON responses.
+- Click **"⚡ Run Boundary Test Suite"** to watch automated fuzzing of whitespace strings, negative numbers, and missing fields.
+- Click **"🐍 Export to Pytest"** to view and copy auto-generated test code.
+
+### 2. Run the Automated Unit Test Suite
+```bash
+pytest -v
+```
+
+### 3. Install in Another Project Locally (Editable Mode)
+To use this local version inside any other Python app on your machine without publishing to PyPI:
+```bash
+# In your other project's directory and virtualenv:
+pip install -e c:\Research-projects\specforge
+```
+*Any change you make in SpecForge source code will instantly reflect in your other application without reinstalling!*
+
+### 4. Build a Distribution Wheel (.whl)
+```bash
+pip install build
+python -m build
+# Outputs wheel file in dist/specforge-0.1.0-py3-none-any.whl
+```
+
+---
+
 ## 📄 License
 
 SpecForge is licensed under the [MIT License](LICENSE).
