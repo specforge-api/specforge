@@ -28,6 +28,34 @@
       --font-mono: 'JetBrains Mono', monospace;
     }
 
+    [data-theme="light"] {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #f1f5f9;
+      --bg-input: #ffffff;
+      --border: #e2e8f0;
+      --border-focus: #6366f1;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #e11d48;
+    }
+    [data-theme="light"] header {
+      background: rgba(255, 255, 255, 0.85);
+    }
+    [data-theme="light"] .endpoint-item.active {
+      background: #e0e7ff;
+      border-left: 3px solid var(--primary);
+    }
+    [data-theme="light"] .code-box,
+    [data-theme="light"] .editor-box {
+      color: #0369a1;
+      background: #f8fafc;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--bg-base);
@@ -38,6 +66,7 @@
       height: 100vh;
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     /* Header */
@@ -352,7 +381,10 @@
       </button>
     </div>
 
-    <div>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <button class="btn btn-outline" id="theme-toggle-btn" style="font-size: 0.95rem; padding: 0.35rem 0.65rem;" onclick="toggleTheme()" title="Toggle Dark / Light Mode">
+        🌙
+      </button>
       <button class="btn btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.8rem;" onclick="openPytestModal()">
         🐍 Export to Pytest
       </button>
@@ -528,7 +560,25 @@
       enable_tests: true
     };
 
+    let currentTheme = localStorage.getItem("specforge_theme") || config.theme || "dark";
+
+    function applyTheme(theme) {
+      currentTheme = theme;
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("specforge_theme", theme);
+      const btn = document.getElementById("theme-toggle-btn");
+      if (btn) {
+        btn.textContent = theme === "dark" ? "🌙" : "☀️";
+        btn.setAttribute("title", `Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`);
+      }
+    }
+
+    function toggleTheme() {
+      applyTheme(currentTheme === "dark" ? "light" : "dark");
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
+      applyTheme(currentTheme);
       if (config.title) document.getElementById("app-title").textContent = config.title;
       await loadSpecification();
     });
