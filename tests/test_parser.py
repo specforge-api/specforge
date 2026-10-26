@@ -100,7 +100,7 @@ def test_circular_ref_protection():
         }
     }
     resolver = RefResolver(cyclic_spec)
-    dereferenced = resolver.dereference(cyclic_spec["components"]["schemas"]["Node"])
+    dereferenced = resolver.dereference({"$ref": "#/components/schemas/Node"})
     assert dereferenced["type"] == "object"
     assert dereferenced["properties"]["parent"]["_is_cycle"] is True
 
