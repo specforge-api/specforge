@@ -512,6 +512,63 @@
     [data-theme="light"] .planned-test-row {
       background: #ffffff;
     }
+
+    /* Grouped Field Collapsible Cards */
+    .field-group-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      margin-bottom: 0.6rem;
+      transition: border-color 0.15s ease;
+    }
+    .field-group-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+    [data-theme="light"] .field-group-card {
+      background: #f8fafc;
+    }
+    .field-group-header {
+      padding: 0.6rem 0.85rem;
+      background: var(--bg-input);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease;
+    }
+    .field-group-header:hover {
+      background: rgba(99, 102, 241, 0.08);
+    }
+    [data-theme="light"] .field-group-header {
+      background: #f1f5f9;
+    }
+    .field-group-body {
+      padding: 0.6rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .field-probe-item {
+      display: grid;
+      grid-template-columns: 1fr 140px auto;
+      gap: 0.75rem;
+      align-items: center;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 0.35rem;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.82rem;
+      transition: border-color 0.15s ease;
+    }
+    .field-probe-item:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+    [data-theme="light"] .field-probe-item {
+      background: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -729,7 +786,10 @@
                 0 Tests Planned
               </span>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="event.stopPropagation(); toggleAllFieldGroups();" title="Collapse or expand all field groups">
+                📂 Toggle All Fields
+              </button>
               <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.22rem 0.65rem; border-color: #6366f1; color: #818cf8;" onclick="event.stopPropagation(); runBoundaryTestsForCurrentRoute();">
                 ⚡ Run All For This Route
               </button>
@@ -1547,6 +1607,7 @@
     }
 
     let isEndpointAccordionOpen = true;
+    let allFieldGroupsExpanded = true;
 
     function toggleEndpointAccordion() {
       isEndpointAccordionOpen = !isEndpointAccordionOpen;
@@ -1557,6 +1618,41 @@
       }
       if (chevron) {
         chevron.classList.toggle("collapsed", !isEndpointAccordionOpen);
+      }
+    }
+
+    function toggleAllFieldGroups() {
+      allFieldGroupsExpanded = !allFieldGroupsExpanded;
+      document.querySelectorAll(".field-group-body").forEach(b => {
+        b.style.display = allFieldGroupsExpanded ? "flex" : "none";
+      });
+      document.querySelectorAll(".field-group-header .accordion-chevron").forEach(c => {
+        c.classList.toggle("collapsed", !allFieldGroupsExpanded);
+      });
+    }
+
+    function toggleFieldGroup(safeId) {
+      const body = document.getElementById(`body-${safeId}`);
+      const chevron = document.getElementById(`chevron-${safeId}`);
+      if (!body) return;
+      const isClosed = body.style.display === "none";
+      body.style.display = isClosed ? "flex" : "none";
+      if (chevron) {
+        chevron.classList.toggle("collapsed", !isClosed);
+      }
+    }
+
+    async function runFieldGroupProbes(safeId) {
+      const body = document.getElementById(`body-${safeId}`);
+      if (!body) return;
+      body.style.display = "flex";
+      const chevron = document.getElementById(`chevron-${safeId}`);
+      if (chevron) chevron.classList.remove("collapsed");
+
+      const testBtns = body.querySelectorAll("button[onclick*='runSingleRouteProbe']");
+      for (const btn of testBtns) {
+        btn.click();
+        await new Promise(r => setTimeout(r, 60));
       }
     }
 
@@ -1576,62 +1672,99 @@
         return;
       }
 
-      container.innerHTML = "";
+      // Group test cases by field
+      const fieldGroups = {};
       routeCases.forEach((tc, i) => {
+        const key = tc.field;
+        if (!fieldGroups[key]) {
+          fieldGroups[key] = [];
+        }
+        fieldGroups[key].push({ tc, globalIndex: i });
+      });
+
+      container.innerHTML = "";
+      Object.entries(fieldGroups).forEach(([fieldName, items], groupIndex) => {
+        const safeId = `field-grp-${groupIndex}`;
+
+        // Determine location tag
         let locBadge = `<span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#94a3b8; background:rgba(148,163,184,0.12); padding:0.1rem 0.35rem; border-radius:3px;">`;
-        if (tc.field.startsWith('?')) locBadge += `Query`;
-        else if (tc.field.startsWith('Header:')) locBadge += `Header`;
-        else if (tc.field.startsWith('Path')) locBadge += `Path`;
+        if (fieldName.startsWith('?')) locBadge += `Query`;
+        else if (fieldName.startsWith('Header:')) locBadge += `Header`;
+        else if (fieldName.startsWith('Path')) locBadge += `Path`;
         else locBadge += `Body`;
         locBadge += `</span>`;
 
-        let valPreview = "";
-        if (tc.payload && typeof tc.payload === 'object') {
-          const targetVal = tc.payload[tc.field];
-          if (targetVal !== undefined) {
-            valPreview = JSON.stringify(targetVal);
-          } else {
-            valPreview = `(Field omitted)`;
-          }
-        } else if (tc.field.startsWith('?')) {
-          const qVal = tc.endpoint.split('?')[1] || '';
-          valPreview = decodeURIComponent(qVal);
-        } else if (tc.field.startsWith('Header:')) {
-          valPreview = `Missing auth header`;
-        } else {
-          valPreview = `Below min length ('x')`;
-        }
+        const countText = items.length === 1 ? "1 test" : `${items.length} tests`;
 
-        const row = document.createElement("div");
-        row.className = "planned-test-row";
-        row.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-            <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+        const groupCard = document.createElement("div");
+        groupCard.className = "field-group-card";
+        groupCard.innerHTML = `
+          <div class="field-group-header" onclick="toggleFieldGroup('${safeId}')">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
               ${locBadge}
-              <span class="field-tag">${tc.field}</span>
+              <span class="field-tag">${fieldName}</span>
+              <span class="sub-tab-badge" style="background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); font-size: 0.7rem; font-weight: 600;">
+                ${countText}
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button class="btn btn-outline" style="font-size: 0.7rem; padding: 0.18rem 0.5rem;" onclick="event.stopPropagation(); runFieldGroupProbes('${safeId}')" title="Run all tests for this field">
+                ▶ Test Field Probes (${items.length})
+              </button>
+              <span id="chevron-${safeId}" class="accordion-chevron">▼</span>
             </div>
           </div>
-          <div>
-            <div style="font-weight: 600; color: var(--text-main); font-size: 0.84rem;">${tc.category}</div>
-            <div style="color: var(--text-muted); font-size: 0.76rem; margin-top: 0.1rem;">${tc.desc}</div>
-            <div style="margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.72rem; color: #38bdf8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px;">
-              Probe Value: <code>${valPreview}</code>
-            </div>
-          </div>
-          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;">
-            <span style="font-size: 0.74rem; color: var(--text-muted);">Expected: <strong style="color: var(--text-main);">${tc.expected}</strong></span>
-            <div id="route-probe-res-${i}"><span class="pill pill-planned">READY</span></div>
-          </div>
-          <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
-            <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="runSingleRouteProbe(${i}, 'route-probe-res-${i}')">
-              ▶ Test
-            </button>
-            <button class="btn-icon" onclick="inspectSingleRouteProbe(${i})" title="Inspect payload">
-              🔍
-            </button>
+          <div id="body-${safeId}" class="field-group-body" style="display: flex;">
           </div>
         `;
-        container.appendChild(row);
+
+        const bodyEl = groupCard.querySelector(`#body-${safeId}`);
+
+        items.forEach(({ tc, globalIndex }) => {
+          let valPreview = "";
+          if (tc.payload && typeof tc.payload === 'object') {
+            const targetVal = tc.payload[tc.field];
+            if (targetVal !== undefined) {
+              valPreview = JSON.stringify(targetVal);
+            } else {
+              valPreview = `(Field omitted)`;
+            }
+          } else if (tc.field.startsWith('?')) {
+            const qVal = tc.endpoint.split('?')[1] || '';
+            valPreview = decodeURIComponent(qVal);
+          } else if (tc.field.startsWith('Header:')) {
+            valPreview = `Missing auth header`;
+          } else {
+            valPreview = `Below min length ('x')`;
+          }
+
+          const itemEl = document.createElement("div");
+          itemEl.className = "field-probe-item";
+          itemEl.innerHTML = `
+            <div>
+              <div style="font-weight: 600; color: var(--text-main); font-size: 0.83rem;">${tc.category}</div>
+              <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.1rem;">${tc.desc}</div>
+              <div style="margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.72rem; color: #38bdf8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px;">
+                Probe Value: <code>${valPreview}</code>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;">
+              <span style="font-size: 0.74rem; color: var(--text-muted);">Expected: <strong style="color: var(--text-main);">${tc.expected}</strong></span>
+              <div id="route-probe-res-${globalIndex}"><span class="pill pill-planned">READY</span></div>
+            </div>
+            <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+              <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="runSingleRouteProbe(${globalIndex}, 'route-probe-res-${globalIndex}')">
+                ▶ Test
+              </button>
+              <button class="btn-icon" onclick="inspectSingleRouteProbe(${globalIndex})" title="Inspect payload">
+                🔍
+              </button>
+            </div>
+          `;
+          bodyEl.appendChild(itemEl);
+        });
+
+        container.appendChild(groupCard);
       });
     }
 
