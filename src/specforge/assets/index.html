@@ -625,7 +625,10 @@
               <textarea id="request-body-input" class="editor-box" style="height: 180px;" oninput="updateCodeSnippet()"></textarea>
             </div>
 
-            <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.5rem; align-items: center;">
+              <button class="btn btn-outline" style="border-color: #6366f1; color: #818cf8; font-size: 0.82rem;" onclick="runBoundaryTestsForCurrentRoute()">
+                🧪 Test Boundaries for this Route
+              </button>
               <button class="btn btn-primary" onclick="executeManualRequest()">
                 ▶ Send Request
               </button>
@@ -675,16 +678,22 @@
 
       <!-- View 2: Automated Boundary & Contract Testing Tab -->
       <div id="view-testing" class="view-panel">
-        <div class="card" style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="card" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
           <div>
             <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem;">Automated Boundary & Contract Fuzzer</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem;">
               Probes string whitespace, empty values, numerical bounds, and detects unhandled 500 server crashes.
             </p>
           </div>
-          <div style="display: flex; gap: 0.75rem;">
-            <button class="btn btn-primary" onclick="runAllBoundaryTests()">
-              ⚡ Run Boundary Test Suite
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <label for="test-scope-select" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Scope:</label>
+              <select id="test-scope-select" class="kv-input" style="width: auto; min-width: 250px; font-size: 0.82rem;" onchange="onTestScopeChange()">
+                <option value="all">🌐 All Endpoints</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="btn-run-tests" onclick="executeBoundaryTests()">
+              ⚡ Run Selected Scope
             </button>
             <button class="btn btn-outline" onclick="openPytestModal()">
               🐍 Export to Pytest
@@ -718,6 +727,7 @@
             <thead>
               <tr>
                 <th>Status</th>
+                <th>Endpoint</th>
                 <th>Target Field</th>
                 <th>Mutation Strategy</th>
                 <th>Expected vs Actual</th>
@@ -727,8 +737,8 @@
             </thead>
             <tbody id="test-table-body">
               <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                  Click <strong>Run Boundary Test Suite</strong> to execute edge-case contract tests.
+                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                  Click <strong>Run Selected Scope</strong> to execute edge-case contract tests.
                 </td>
               </tr>
             </tbody>
@@ -1306,6 +1316,8 @@
       operations.forEach(op => {
         const schema = op.raw?.requestBody?.content?.['application/json']?.schema;
         const rawParams = op.raw?.parameters || [];
+        const opMethod = op.method.toLowerCase();
+        const opPath = op.path;
 
         // 1. Request Body Fuzzing
         if (schema && schema.properties) {
@@ -1314,6 +1326,8 @@
           for (const [propName, propSchema] of Object.entries(schema.properties)) {
             if (propSchema.type === 'string') {
               testCases.push({
+                opMethod,
+                opPath,
                 endpoint: op.path,
                 method: op.method,
                 field: propName,
@@ -1323,6 +1337,8 @@
                 expected: 422
               });
               testCases.push({
+                opMethod,
+                opPath,
                 endpoint: op.path,
                 method: op.method,
                 field: propName,
@@ -1333,6 +1349,8 @@
               });
             } else if (propSchema.type === 'integer' || propSchema.type === 'number') {
               testCases.push({
+                opMethod,
+                opPath,
                 endpoint: op.path,
                 method: op.method,
                 field: propName,
@@ -1342,6 +1360,8 @@
                 expected: 422
               });
               testCases.push({
+                opMethod,
+                opPath,
                 endpoint: op.path,
                 method: op.method,
                 field: propName,
@@ -1358,6 +1378,8 @@
               const omitted = { ...baseline };
               delete omitted[reqKey];
               testCases.push({
+                opMethod,
+                opPath,
                 endpoint: op.path,
                 method: op.method,
                 field: reqKey,
@@ -1375,6 +1397,8 @@
           const pName = p.name;
           if (p.schema?.type === 'string') {
             testCases.push({
+              opMethod,
+              opPath,
               endpoint: `${op.path}?${pName}=%20%20%20`,
               method: op.method,
               field: `?${pName}`,
@@ -1385,6 +1409,8 @@
             });
           } else if (p.schema?.type === 'integer') {
             testCases.push({
+              opMethod,
+              opPath,
               endpoint: `${op.path}?${pName}=-1`,
               method: op.method,
               field: `?${pName}`,
@@ -1400,6 +1426,8 @@
         const authHeader = rawParams.find(p => p.in === 'header' && p.name.toLowerCase() === 'authorization');
         if (authHeader && authHeader.required) {
           testCases.push({
+            opMethod,
+            opPath,
             endpoint: op.path.replace(/\{([^}]+)\}/g, 'usr_101'),
             method: op.method,
             field: 'Header: Authorization',
@@ -1409,20 +1437,96 @@
             expected: 401
           });
         }
+
+        // 4. Path Variable Fuzzing
+        if (op.path.includes('{')) {
+          const shortPath = op.path.replace(/\{([^}]+)\}/g, 'x');
+          testCases.push({
+            opMethod,
+            opPath,
+            endpoint: shortPath,
+            method: op.method,
+            field: 'Path Variable: Length',
+            category: "Boundary: Min Length Violation",
+            desc: "Rejects path parameter below minimum required length ('x')",
+            payload: null,
+            expected: 422
+          });
+        }
       });
 
-      document.getElementById("stat-total").textContent = testCases.length;
+      populateTestScopeDropdown();
     }
 
-    async function runAllBoundaryTests() {
+    function populateTestScopeDropdown() {
+      const sel = document.getElementById("test-scope-select");
+      if (!sel) return;
+      const currentVal = sel.value || "all";
+      sel.innerHTML = `<option value="all">🌐 All Endpoints (${testCases.length} tests)</option>`;
+
+      operations.forEach(op => {
+        const key = `${op.method.toLowerCase()}:${op.path}`;
+        const count = testCases.filter(tc => tc.opMethod === op.method.toLowerCase() && tc.opPath === op.path).length;
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = `${op.method.toUpperCase()} ${op.path} (${count} tests)`;
+        sel.appendChild(opt);
+      });
+
+      if ([...sel.options].some(o => o.value === currentVal)) {
+        sel.value = currentVal;
+      }
+      updateScopeStats();
+    }
+
+    function onTestScopeChange() {
+      updateScopeStats();
+      const tbody = document.getElementById("test-table-body");
+      const activeCases = getActiveTestCases();
+      const sel = document.getElementById("test-scope-select");
+      const scopeLabel = sel && sel.value !== "all" ? sel.value.toUpperCase() : "all endpoints";
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Ready to run <strong>${activeCases.length} tests</strong> for ${scopeLabel}. Click <strong>⚡ Run Selected Scope</strong>.</td></tr>`;
+    }
+
+    function getActiveTestCases() {
+      const sel = document.getElementById("test-scope-select");
+      const scope = sel ? sel.value : "all";
+      if (!scope || scope === "all") return testCases;
+      const [method, path] = scope.split(":");
+      return testCases.filter(tc => tc.opMethod === method && tc.opPath === path);
+    }
+
+    function updateScopeStats() {
+      const activeCases = getActiveTestCases();
+      document.getElementById("stat-total").textContent = activeCases.length;
+      document.getElementById("stat-pass").textContent = "0";
+      document.getElementById("stat-leak").textContent = "0";
+      document.getElementById("stat-crash").textContent = "0";
+    }
+
+    function runBoundaryTestsForCurrentRoute() {
+      const op = operations[selectedOpIndex];
+      if (!op) return;
+      switchTab('testing');
+      const sel = document.getElementById("test-scope-select");
+      if (sel) {
+        sel.value = `${op.method.toLowerCase()}:${op.path}`;
+        onTestScopeChange();
+      }
+      executeBoundaryTests();
+    }
+
+    async function executeBoundaryTests() {
+      const activeCases = getActiveTestCases();
+      window.__activeTestCases = activeCases;
       const tbody = document.getElementById("test-table-body");
       tbody.innerHTML = "";
       let passCount = 0;
       let leakCount = 0;
       let crashCount = 0;
 
-      for (let i = 0; i < testCases.length; i++) {
-        const tc = testCases[i];
+      for (let i = 0; i < activeCases.length; i++) {
+        const tc = activeCases[i];
         const start = performance.now();
         let status = 0;
         let respText = "";
@@ -1465,6 +1569,7 @@
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td><span class="pill ${pillClass}">${statusLabel}</span></td>
+          <td><span class="badge-method badge-${tc.opMethod}">${tc.opMethod.toUpperCase()}</span> <code style="font-size:0.8rem; color: var(--text-main); margin-left: 0.35rem;">${tc.opPath}</code></td>
           <td><code>${tc.field}</code></td>
           <td><strong>${tc.category}</strong><br><span style="color:var(--text-muted);font-size:0.75rem;">${tc.desc}</span></td>
           <td>Expected ${tc.expected} | Got ${status}</td>
@@ -1479,14 +1584,24 @@
       }
     }
 
+    function runAllBoundaryTests() {
+      const sel = document.getElementById("test-scope-select");
+      if (sel) sel.value = "all";
+      onTestScopeChange();
+      executeBoundaryTests();
+    }
+
     function inspectTestPayload(idx) {
-      const tc = testCases[idx];
+      const tc = (window.__activeTestCases && window.__activeTestCases[idx]) || testCases[idx];
       alert(`Mutated Payload / Target for '${tc.field}':\n\nEndpoint: ${tc.endpoint}\nPayload: ` + JSON.stringify(tc.payload, null, 2));
     }
 
     function openPytestModal() {
-      let code = `# Auto-generated by SpecForge\nimport pytest\nimport httpx\n\nBASE_URL = "http://localhost:8000"\n\n@pytest.mark.parametrize("endpoint,method,payload,expected", [\n`;
-      testCases.forEach(tc => {
+      const activeCases = getActiveTestCases();
+      const sel = document.getElementById("test-scope-select");
+      const scopeLabel = sel && sel.value !== "all" ? `Scope: ${sel.value.toUpperCase()}` : "Scope: All Endpoints";
+      let code = `# Auto-generated by SpecForge (${scopeLabel})\nimport pytest\nimport httpx\n\nBASE_URL = "http://localhost:8000"\n\n@pytest.mark.parametrize("endpoint,method,payload,expected", [\n`;
+      activeCases.forEach(tc => {
         code += `    ("${tc.endpoint}", "${tc.method.toUpperCase()}", ${JSON.stringify(tc.payload)}, ${tc.expected}),\n`;
       });
       code += `])\ndef test_contract_boundaries(endpoint, method, payload, expected):\n    with httpx.Client(base_url=BASE_URL) as client:\n        res = client.request(method, endpoint, json=payload)\n        assert res.status_code != 500, "Server crashed with 500!"\n        assert res.status_code == expected\n`;
