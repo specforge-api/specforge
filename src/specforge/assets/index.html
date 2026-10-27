@@ -10,56 +10,327 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- __SPECFORGE_CONFIG_INJECTION__ -->
   <style>
-    :root {
-      --bg-base: #090d16;
-      --bg-surface: #0f172a;
-      --bg-card: #1e293b;
-      --bg-input: #0b1120;
-      --border: #334155;
-      --border-focus: #6366f1;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #f43f5e;
+    /* Theme 1 - Indigo Slate Light (Default) */
+    :root, [data-theme="theme-1"] {
+      /* Brand & buttons */
+      --primary: #6366F1;
+      --primary-hover: #4F46E5;
+      --primary-active: #4338CA;
+      --primary-foreground: #FFFFFF;
+
+      /* Page & surfaces */
+      --background: #F8FAFC;
+      --foreground: #1E293B;
+      --card: #FFFFFF;
+      --card-foreground: #1E293B;
+      --popover: #FFFFFF;
+      --popover-foreground: #1E293B;
+
+      /* Secondary & muted */
+      --secondary: #F1F5F9;
+      --secondary-hover: #E2E8F0;
+      --secondary-foreground: #334155;
+      --muted: #F1F5F9;
+      --muted-foreground: #64748B;
+      --accent: #EEF2FF;
+      --accent-foreground: #4338CA;
+
+      /* Borders & inputs */
+      --border: #E2E8F0;
+      --input: #CBD5E1;
+      --ring: #818CF8;
+
+      /* Sidebar */
+      --sidebar: #FFFFFF;
+      --sidebar-foreground: #334B4A;
+      --sidebar-hover: #F8FAFC;
+      --sidebar-active: #EEF2FF;
+      --sidebar-active-foreground: #4338CA;
+
+      /* Code & links */
+      --link: #4F46E5;
+      --code-background: #F1F5F9;
+      --code-foreground: #0369A1;
+
+      /* Status */
+      --success: #16A34A;
+      --success-background: #F0FDF4;
+      --warning: #D97706;
+      --warning-background: #FFFBEB;
+      --destructive: #DC2626;
+      --destructive-background: #FEF2F2;
+      --info: #0284C7;
+      --info-background: #F0F9FF;
+
+      /* Effects */
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+      /* Aliases for SpecForge layout */
+      --bg-base: var(--background);
+      --bg-surface: var(--card);
+      --bg-card: var(--secondary);
+      --bg-input: var(--code-background);
+      --border-focus: var(--ring);
+      --text-main: var(--foreground);
+      --text-muted: var(--muted-foreground);
+      --danger: var(--destructive);
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
     }
 
-    [data-theme="light"] {
-      --bg-base: #f8fafc;
-      --bg-surface: #ffffff;
-      --bg-card: #f1f5f9;
-      --bg-input: #ffffff;
-      --border: #e2e8f0;
-      --border-focus: #6366f1;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --success: #059669;
-      --warning: #d97706;
-      --danger: #e11d48;
+    /* Theme 2 - Emerald Teal Light */
+    [data-theme="theme-2"] {
+      /* Brand & buttons */
+      --primary: #0F9488;
+      --primary-hover: #0D766E;
+      --primary-active: #115E59;
+      --primary-foreground: #FFFFFF;
+
+      /* Page & surfaces */
+      --background: #F7FAFA;
+      --foreground: #24343B;
+      --card: #FFFFFF;
+      --card-foreground: #24343B;
+      --popover: #FFFFFF;
+      --popover-foreground: #24343B;
+
+      /* Secondary & muted */
+      --secondary: #EDF5F4;
+      --secondary-hover: #DCEAE8;
+      --secondary-foreground: #334B4A;
+      --muted: #F0F5F5;
+      --muted-foreground: #647776;
+      --accent: #E0F2F1;
+      --accent-foreground: #115E59;
+
+      /* Borders & inputs */
+      --border: #DCE7E7;
+      --input: #C7D8D7;
+      --ring: #5EEAD4;
+
+      /* Sidebar */
+      --sidebar: #FFFFFF;
+      --sidebar-foreground: #334B4A;
+      --sidebar-hover: #F0F8F7;
+      --sidebar-active: #E0F2F1;
+      --sidebar-active-foreground: #115E59;
+
+      /* Code & links */
+      --link: #0D766E;
+      --code-background: #EDF5F4;
+      --code-foreground: #0E7490;
+
+      /* Status */
+      --success: #15803D;
+      --success-background: #F0FDF4;
+      --warning: #B45309;
+      --warning-background: #FFFBEB;
+      --destructive: #DC2626;
+      --destructive-background: #FEF2F2;
+      --info: #0369A1;
+      --info-background: #F0F9FF;
+
+      /* Effects */
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(36, 52, 59, 0.06);
+
+      --bg-base: var(--background);
+      --bg-surface: var(--card);
+      --bg-card: var(--secondary);
+      --bg-input: var(--code-background);
+      --border-focus: var(--ring);
+      --text-main: var(--foreground);
+      --text-muted: var(--muted-foreground);
+      --danger: var(--destructive);
     }
-    [data-theme="light"] header {
-      background: rgba(255, 255, 255, 0.85);
+
+    /* Theme 3 - Midnight Dark */
+    .dark, [data-theme="theme-3"], [data-theme="dark"] {
+      /* Brand & buttons */
+      --primary: #38BDF8;
+      --primary-hover: #0EA5E9;
+      --primary-active: #0284C7;
+      --primary-foreground: #082F49;
+
+      /* Page & surfaces */
+      --background: #0F172A;
+      --foreground: #E2E8F0;
+      --card: #1E293B;
+      --card-foreground: #E2E8F0;
+      --popover: #1E293B;
+      --popover-foreground: #E2E8F0;
+
+      /* Secondary & muted */
+      --secondary: #273449;
+      --secondary-hover: #334155;
+      --secondary-foreground: #E2E8F0;
+      --muted: #1E293B;
+      --muted-foreground: #94A3B8;
+      --accent: #164E63;
+      --accent-foreground: #BAE6FD;
+
+      /* Borders & inputs */
+      --border: #334155;
+      --input: #475569;
+      --ring: #38BDF8;
+
+      /* Sidebar */
+      --sidebar: #111C30;
+      --sidebar-foreground: #CBD5E1;
+      --sidebar-hover: #1E293B;
+      --sidebar-active: #164E63;
+      --sidebar-active-foreground: #BAE6FD;
+
+      /* Code & links */
+      --link: #7DD3FC;
+      --code-background: #111C30;
+      --code-foreground: #7DD3FC;
+
+      /* Status */
+      --success: #4ADE80;
+      --success-background: #143526;
+      --warning: #FBBF24;
+      --warning-background: #3A2D14;
+      --destructive: #F87171;
+      --destructive-background: #3B1D25;
+      --info: #38BDF8;
+      --info-background: #142D43;
+
+      /* Effects */
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+
+      --bg-base: var(--background);
+      --bg-surface: var(--card);
+      --bg-card: var(--secondary);
+      --bg-input: var(--code-background);
+      --border-focus: var(--ring);
+      --text-main: var(--foreground);
+      --text-muted: var(--muted-foreground);
+      --danger: var(--destructive);
     }
-    [data-theme="light"] .endpoint-item.active {
-      background: #e0e7ff;
-      border-left: 3px solid var(--primary);
+
+    /* Theme 4 - Cobalt Blue Light */
+    [data-theme="theme-4"] {
+      /* Brand & buttons */
+      --primary: #3B82F6;
+      --primary-hover: #2563EB;
+      --primary-active: #1D4ED8;
+      --primary-foreground: #FFFFFF;
+
+      /* Page & surfaces */
+      --background: #F6F8FB;
+      --foreground: #263449;
+      --card: #FFFFFF;
+      --card-foreground: #263449;
+      --popover: #FFFFFF;
+      --popover-foreground: #263449;
+
+      /* Secondary & muted */
+      --secondary: #EEF2F7;
+      --secondary-hover: #E1E7EF;
+      --secondary-foreground: #35445A;
+      --muted: #F0F3F8;
+      --muted-foreground: #66758A;
+      --accent: #E8F0FE;
+      --accent-foreground: #1D4ED8;
+
+      /* Borders & inputs */
+      --border: #E1E7EF;
+      --input: #CBD5E1;
+      --ring: #93C5FD;
+
+      /* Sidebar */
+      --sidebar: #FFFFFF;
+      --sidebar-foreground: #35445A;
+      --sidebar-hover: #F6F8FB;
+      --sidebar-active: #E8F0FE;
+      --sidebar-active-foreground: #1D4ED8;
+
+      /* Code & links */
+      --link: #2563EB;
+      --code-background: #EEF2F7;
+      --code-foreground: #0369A1;
+
+      /* Status */
+      --success: #15803D;
+      --success-background: #F0FDF4;
+      --warning: #B45309;
+      --warning-background: #FFFBEB;
+      --destructive: #DC2626;
+      --destructive-background: #FEF2F2;
+      --info: #0369A1;
+      --info-background: #EFF6FF;
+
+      /* Effects */
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(38, 52, 73, 0.06);
+
+      --bg-base: var(--background);
+      --bg-surface: var(--card);
+      --bg-card: var(--secondary);
+      --bg-input: var(--code-background);
+      --border-focus: var(--ring);
+      --text-main: var(--foreground);
+      --text-muted: var(--muted-foreground);
+      --danger: var(--destructive);
     }
-    [data-theme="light"] .code-box,
-    [data-theme="light"] .editor-box {
-      color: #0369a1;
-      background: #f8fafc;
+
+    /* Dropdown Theme Picker Menu */
+    .theme-dropdown-container {
+      position: relative;
+    }
+    .theme-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+      width: 260px;
+      padding: 0.4rem;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .theme-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: calc(var(--radius) - 3px);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      color: var(--card-foreground);
+    }
+    .theme-menu-item:hover {
+      background: var(--secondary);
+      color: var(--secondary-foreground);
+    }
+    .theme-swatch {
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      border: 2px solid var(--card);
+      box-shadow: 0 0 0 1px var(--border);
+    }
+    .theme-check {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--primary);
+      width: 1.2rem;
+      text-align: right;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: var(--bg-base);
-      color: var(--text-main);
+      background: var(--background);
+      color: var(--foreground);
       font-family: var(--font-sans);
       display: flex;
       flex-direction: column;
@@ -71,9 +342,9 @@
 
     /* Header */
     header {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
+      background: var(--sidebar);
       border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
       padding: 0.75rem 1.5rem;
       display: flex;
       align-items: center;
@@ -591,9 +862,53 @@
     </div>
 
     <div style="display: flex; align-items: center; gap: 0.5rem;">
-      <button class="btn btn-outline" id="theme-toggle-btn" style="font-size: 0.95rem; padding: 0.35rem 0.65rem;" onclick="toggleTheme()" title="Toggle Dark / Light Mode">
-        🌙
-      </button>
+      <!-- Color Theme Selector Dropdown -->
+      <div class="theme-dropdown-container">
+        <button class="btn btn-outline" id="theme-btn" onclick="toggleThemeDropdown(event)" style="font-size: 0.82rem; padding: 0.35rem 0.75rem; display: inline-flex; align-items: center; gap: 0.45rem;" title="Change Color Theme">
+          <span id="theme-icon">🟣</span>
+          <span id="theme-name-label">Theme 1 (Indigo)</span>
+          <span style="font-size: 0.65rem; color: var(--muted-foreground); margin-left: 0.15rem;">▼</span>
+        </button>
+
+        <div id="theme-menu" class="theme-dropdown-menu" style="display: none;">
+          <div class="theme-menu-item" onclick="selectTheme('theme-1')">
+            <span class="theme-swatch" style="background: #6366F1;"></span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.82rem;">Theme 1: Indigo Slate</div>
+              <div style="font-size: 0.72rem; color: var(--muted-foreground);">Indigo & clean slate light</div>
+            </div>
+            <span id="check-theme-1" class="theme-check">✓</span>
+          </div>
+
+          <div class="theme-menu-item" onclick="selectTheme('theme-2')">
+            <span class="theme-swatch" style="background: #0F9488;"></span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.82rem;">Theme 2: Emerald Teal</div>
+              <div style="font-size: 0.72rem; color: var(--muted-foreground);">Fresh mint & teal light</div>
+            </div>
+            <span id="check-theme-2" class="theme-check"></span>
+          </div>
+
+          <div class="theme-menu-item" onclick="selectTheme('theme-3')">
+            <span class="theme-swatch" style="background: #38BDF8; box-shadow: 0 0 6px rgba(56, 189, 248, 0.6);"></span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.82rem;">Theme 3: Midnight Dark</div>
+              <div style="font-size: 0.72rem; color: var(--muted-foreground);">Deep navy slate & sky blue</div>
+            </div>
+            <span id="check-theme-3" class="theme-check"></span>
+          </div>
+
+          <div class="theme-menu-item" onclick="selectTheme('theme-4')">
+            <span class="theme-swatch" style="background: #3B82F6;"></span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.82rem;">Theme 4: Cobalt Blue</div>
+              <div style="font-size: 0.72rem; color: var(--muted-foreground);">Modern cobalt & azure light</div>
+            </div>
+            <span id="check-theme-4" class="theme-check"></span>
+          </div>
+        </div>
+      </div>
+
       <button class="btn btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.8rem;" onclick="openPytestModal()">
         🐍 Export to Pytest
       </button>
@@ -939,25 +1254,63 @@
       enable_tests: true
     };
 
-    let currentTheme = localStorage.getItem("specforge_theme") || config.theme || "dark";
+    const THEMES = {
+      'theme-1': { label: 'Theme 1 (Indigo)', icon: '🟣' },
+      'theme-2': { label: 'Theme 2 (Teal)', icon: '🟢' },
+      'theme-3': { label: 'Theme 3 (Dark)', icon: '🌌' },
+      'theme-4': { label: 'Theme 4 (Cobalt)', icon: '🔵' }
+    };
 
-    function applyTheme(theme) {
-      currentTheme = theme;
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem("specforge_theme", theme);
-      const btn = document.getElementById("theme-toggle-btn");
-      if (btn) {
-        btn.textContent = theme === "dark" ? "🌙" : "☀️";
-        btn.setAttribute("title", `Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`);
+    let currentTheme = localStorage.getItem("specforge_theme") || "theme-1";
+    if (currentTheme === "dark") currentTheme = "theme-3";
+    if (currentTheme === "light") currentTheme = "theme-1";
+
+    function selectTheme(themeKey) {
+      if (!THEMES[themeKey]) themeKey = "theme-1";
+      currentTheme = themeKey;
+      document.documentElement.setAttribute("data-theme", themeKey);
+      if (themeKey === "theme-3") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      localStorage.setItem("specforge_theme", themeKey);
+
+      // Update button label and icon
+      const info = THEMES[themeKey];
+      const lbl = document.getElementById("theme-name-label");
+      const icon = document.getElementById("theme-icon");
+      if (lbl) lbl.textContent = info.label;
+      if (icon) icon.textContent = info.icon;
+
+      // Update checkmark indicators
+      for (let i = 1; i <= 4; i++) {
+        const chk = document.getElementById(`check-theme-${i}`);
+        if (chk) chk.textContent = (themeKey === `theme-${i}`) ? '✓' : '';
+      }
+
+      closeThemeDropdown();
+    }
+
+    function toggleThemeDropdown(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById("theme-menu");
+      if (menu) {
+        menu.style.display = (menu.style.display === "none" || !menu.style.display) ? "flex" : "none";
       }
     }
 
-    function toggleTheme() {
-      applyTheme(currentTheme === "dark" ? "light" : "dark");
+    function closeThemeDropdown() {
+      const menu = document.getElementById("theme-menu");
+      if (menu) menu.style.display = "none";
     }
 
+    document.addEventListener("click", () => {
+      closeThemeDropdown();
+    });
+
     document.addEventListener("DOMContentLoaded", async () => {
-      applyTheme(currentTheme);
+      selectTheme(currentTheme);
       if (config.title) document.getElementById("app-title").textContent = config.title;
       await loadSpecification();
     });
