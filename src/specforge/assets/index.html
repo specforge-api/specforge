@@ -617,11 +617,20 @@
       <!-- View 1: API Explorer / Client -->
       <div id="view-client" class="view-panel active">
         <div class="card">
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <span id="active-method-badge" class="badge-method badge-post">POST</span>
-            <h2 id="active-path" style="font-size: 1.2rem; font-weight: 700;">/api/v1/users</h2>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+                <span id="active-method-badge" class="badge-method badge-post">POST</span>
+                <h2 id="active-path" style="font-size: 1.25rem; font-weight: 700;">/api/v1/users</h2>
+              </div>
+              <p id="active-summary" style="color: var(--text-muted); font-size: 0.9rem;">Endpoint summary</p>
+            </div>
+            <div>
+              <button class="btn btn-outline" style="border-color: #6366f1; color: #818cf8; font-size: 0.85rem; font-weight: 600; padding: 0.45rem 0.95rem; display: inline-flex; align-items: center; gap: 0.4rem;" onclick="runBoundaryTestsForCurrentRoute()">
+                🧪 Test Boundaries for this Route
+              </button>
+            </div>
           </div>
-          <p id="active-summary" style="color: var(--text-muted); font-size: 0.9rem;">Endpoint summary</p>
           
           <!-- Live Computed URL Preview -->
           <div class="url-bar">
@@ -737,10 +746,7 @@
               <textarea id="request-body-input" class="editor-box" style="height: 180px;" oninput="updateCodeSnippet()"></textarea>
             </div>
 
-            <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.5rem; align-items: center;">
-              <button class="btn btn-outline" style="border-color: #6366f1; color: #818cf8; font-size: 0.82rem;" onclick="runBoundaryTestsForCurrentRoute()">
-                🧪 Test Boundaries for this Route
-              </button>
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
               <button class="btn btn-primary" onclick="executeManualRequest()">
                 ▶ Send Request
               </button>
