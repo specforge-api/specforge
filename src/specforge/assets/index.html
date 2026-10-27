@@ -799,11 +799,11 @@
               <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.22rem 0.65rem; border-color: #6366f1; color: #818cf8;" onclick="event.stopPropagation(); runBoundaryTestsForCurrentRoute();">
                 ⚡ Run All For This Route
               </button>
-              <span id="accordion-chevron" class="accordion-chevron">▼</span>
+              <span id="accordion-chevron" class="accordion-chevron collapsed">▼</span>
             </div>
           </div>
 
-          <div id="endpoint-tests-body" style="margin-top: 1rem; display: block;">
+          <div id="endpoint-tests-body" style="margin-top: 1rem; display: none;">
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.85rem;">
               SpecForge synthesizes these edge-case contract probes directly from this endpoint's OpenAPI schema constraints. You can inspect fields and payloads, run individual probes, or execute the full route test:
             </p>
@@ -1612,7 +1612,7 @@
       renderPlannedTestTable();
     }
 
-    let isEndpointAccordionOpen = true;
+    let isEndpointAccordionOpen = false;
     let allFieldGroupsExpanded = true;
 
     function toggleEndpointAccordion() {
