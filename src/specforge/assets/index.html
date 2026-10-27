@@ -42,7 +42,7 @@
 
       /* Sidebar */
       --sidebar: #FFFFFF;
-      --sidebar-foreground: #334B4A;
+      --sidebar-foreground: #334155;
       --sidebar-hover: #F8FAFC;
       --sidebar-active: #EEF2FF;
       --sidebar-active-foreground: #4338CA;
@@ -50,7 +50,7 @@
       /* Code & links */
       --link: #4F46E5;
       --code-background: #F1F5F9;
-      --code-foreground: #0369A1;
+      --code-foreground: #3730A3;
 
       /* Status */
       --success: #16A34A;
@@ -251,7 +251,7 @@
       /* Code & links */
       --link: #2563EB;
       --code-background: #EEF2F7;
-      --code-foreground: #0369A1;
+      --code-foreground: #1D4ED8;
 
       /* Status */
       --success: #15803D;
@@ -362,26 +362,27 @@
     .brand-icon {
       width: 2rem;
       height: 2rem;
-      background: linear-gradient(135deg, #6366f1, #a855f7);
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
       border-radius: 0.5rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: var(--primary-foreground);
       font-size: 1.1rem;
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+      box-shadow: 0 0 14px var(--ring);
+      transition: all 0.2s ease;
     }
     .version-tag {
       font-size: 0.75rem;
-      background: var(--bg-card);
+      background: var(--secondary);
       padding: 0.15rem 0.5rem;
       border-radius: 9999px;
-      color: var(--text-muted);
+      color: var(--muted-foreground);
       border: 1px solid var(--border);
     }
     .nav-tabs {
       display: flex;
-      background: var(--bg-input);
+      background: var(--code-background);
       padding: 0.25rem;
       border-radius: 0.5rem;
       border: 1px solid var(--border);
@@ -395,17 +396,17 @@
       cursor: pointer;
       border: none;
       background: transparent;
-      color: var(--text-muted);
+      color: var(--muted-foreground);
       transition: all 0.15s ease;
       display: flex;
       align-items: center;
       gap: 0.4rem;
     }
-    .nav-tab:hover { color: var(--text-main); }
+    .nav-tab:hover { color: var(--foreground); }
     .nav-tab.active {
       background: var(--primary);
-      color: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      color: var(--primary-foreground);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
     }
 
     /* Main Container */
@@ -419,7 +420,7 @@
     /* Sidebar */
     aside {
       width: 320px;
-      background: var(--bg-surface);
+      background: var(--sidebar);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -430,15 +431,19 @@
     }
     .search-input {
       width: 100%;
-      background: var(--bg-input);
+      background: var(--code-background);
       border: 1px solid var(--border);
       border-radius: 0.5rem;
       padding: 0.5rem 0.75rem;
-      color: var(--text-main);
+      color: var(--foreground);
       font-size: 0.85rem;
       outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .search-input:focus { border-color: var(--border-focus); }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
     .endpoint-list {
       flex: 1;
       overflow-y: auto;
@@ -446,17 +451,28 @@
     }
     .endpoint-item {
       padding: 0.6rem 0.75rem;
-      border-radius: 0.4rem;
+      border-radius: calc(var(--radius) - 4px);
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.6rem;
       font-size: 0.82rem;
       margin-bottom: 0.25rem;
-      transition: background 0.15s ease;
+      transition: all 0.15s ease;
+      color: var(--sidebar-foreground);
+      border-left: 3px solid transparent;
     }
-    .endpoint-item:hover { background: var(--bg-card); }
-    .endpoint-item.active { background: #263353; border-left: 3px solid var(--primary); }
+    .endpoint-item:hover {
+      background: var(--sidebar-hover);
+      color: var(--sidebar-foreground);
+    }
+    .endpoint-item.active {
+      background: var(--sidebar-active);
+      color: var(--sidebar-active-foreground);
+      border-left: 3px solid var(--primary);
+      font-weight: 600;
+      box-shadow: var(--shadow);
+    }
     
     /* Method Badges */
     .badge-method {
@@ -467,12 +483,21 @@
       text-transform: uppercase;
       font-family: var(--font-mono);
       letter-spacing: 0.05em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
-    .badge-get { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .badge-post { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
-    .badge-put { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-    .badge-delete { background: rgba(244, 63, 94, 0.15); color: #f87171; }
-    .badge-patch { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+    .badge-get { background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+    .badge-post { background: var(--accent); color: var(--accent-foreground); border: 1px solid var(--border); }
+    .badge-put { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }
+    .badge-delete { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+    .badge-patch { background: #ECFEFF; color: #0891B2; border: 1px solid #A5F3FC; }
+
+    .dark .badge-get { background: rgba(16, 185, 129, 0.2); color: #34D399; border-color: rgba(16, 185, 129, 0.35); }
+    .dark .badge-post { background: var(--accent); color: var(--accent-foreground); border-color: var(--ring); }
+    .dark .badge-put { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border-color: rgba(245, 158, 11, 0.35); }
+    .dark .badge-delete { background: rgba(244, 63, 94, 0.2); color: #F87171; border-color: rgba(244, 63, 94, 0.35); }
+    .dark .badge-patch { background: rgba(6, 182, 212, 0.2); color: #22D3EE; border-color: rgba(6, 182, 212, 0.35); }
 
     /* Content Area */
     main {
@@ -490,10 +515,12 @@
 
     /* Cards */
     .card {
-      background: var(--bg-surface);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 0.75rem;
+      border-radius: var(--radius);
       padding: 1.25rem;
+      box-shadow: var(--shadow);
+      color: var(--card-foreground);
     }
     .card-title {
       font-size: 1rem;
@@ -502,6 +529,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      color: var(--card-foreground);
     }
 
     /* Try It Out Panel */
@@ -513,49 +541,98 @@
     .editor-box {
       width: 100%;
       height: 220px;
-      background: var(--bg-input);
+      background: var(--code-background);
       border: 1px solid var(--border);
-      border-radius: 0.5rem;
+      border-radius: calc(var(--radius) - 3px);
       font-family: var(--font-mono);
       font-size: 0.85rem;
-      color: #38bdf8;
+      color: var(--code-foreground);
       padding: 0.75rem;
       resize: vertical;
       outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .editor-box:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--accent);
     }
     .btn {
       padding: 0.55rem 1.25rem;
-      border-radius: 0.4rem;
-      font-size: 0.875rem;
+      border-radius: calc(var(--radius) - 3px);
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
-      border: none;
+      border: 1px solid transparent;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
       transition: all 0.15s ease;
+      font-family: var(--font-sans);
+      user-select: none;
     }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
-    .btn-outline:hover { background: var(--bg-card); }
-    .btn-success { background: var(--success); color: #fff; }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    .btn-primary:active {
+      background: var(--primary-active);
+      border-color: var(--primary-active);
+    }
+    .btn-outline {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--foreground);
+    }
+    .btn-outline:hover {
+      background: var(--secondary);
+      color: var(--secondary-foreground);
+      border-color: var(--input);
+    }
+    .btn-outline:active {
+      background: var(--secondary-hover);
+    }
+    .btn-outline-primary {
+      background: var(--accent);
+      border: 1px solid var(--primary);
+      color: var(--accent-foreground);
+    }
+    .btn-outline-primary:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--primary-foreground);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+    .btn-outline-primary:active {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    .btn-success {
+      background: var(--success);
+      color: #FFFFFF;
+      border-color: var(--success);
+    }
 
     /* URL Bar */
     .url-bar {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      background: var(--bg-input);
+      background: var(--code-background);
       border: 1px solid var(--border);
-      border-radius: 0.5rem;
+      border-radius: calc(var(--radius) - 3px);
       padding: 0.45rem 0.75rem;
       font-family: var(--font-mono);
       font-size: 0.85rem;
       margin-top: 0.75rem;
       word-break: break-all;
     }
-    [data-theme="light"] .url-bar { background: #f1f5f9; }
 
     /* Sub Tabs (Params / Headers / Auth / Body) */
     .sub-tabs {
@@ -568,7 +645,7 @@
       background: transparent;
       border: none;
       border-bottom: 2px solid transparent;
-      color: var(--text-muted);
+      color: var(--muted-foreground);
       font-size: 0.82rem;
       font-weight: 600;
       padding: 0.4rem 0.75rem;
@@ -579,18 +656,19 @@
       transition: all 0.15s ease;
       margin-bottom: -1px;
     }
-    .sub-tab-btn:hover { color: var(--text-main); }
+    .sub-tab-btn:hover { color: var(--foreground); }
     .sub-tab-btn.active {
       color: var(--primary);
       border-bottom-color: var(--primary);
     }
     .sub-tab-badge {
-      font-size: 0.65rem;
-      background: var(--bg-card);
-      padding: 0.1rem 0.35rem;
+      font-size: 0.68rem;
+      background: var(--secondary);
+      padding: 0.12rem 0.45rem;
       border-radius: 9999px;
       border: 1px solid var(--border);
-      color: var(--text-muted);
+      color: var(--muted-foreground);
+      font-weight: 600;
     }
     .sub-panel { display: none; }
     .sub-panel.active { display: block; }
@@ -605,7 +683,7 @@
     .kv-table th {
       text-align: left;
       padding: 0.35rem 0.5rem;
-      color: var(--text-muted);
+      color: var(--muted-foreground);
       font-weight: 600;
       border-bottom: 1px solid var(--border);
     }
@@ -615,28 +693,35 @@
     }
     .kv-input {
       width: 100%;
-      background: var(--bg-input);
+      background: var(--code-background);
       border: 1px solid var(--border);
-      border-radius: 0.35rem;
-      padding: 0.35rem 0.55rem;
-      color: var(--text-main);
+      border-radius: calc(var(--radius) - 4px);
+      padding: 0.4rem 0.6rem;
+      color: var(--foreground);
       font-family: var(--font-mono);
       font-size: 0.82rem;
       outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .kv-input:focus { border-color: var(--border-focus); }
-    [data-theme="light"] .kv-input { background: #ffffff; color: #0f172a; }
+    .kv-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
     .btn-icon {
       background: transparent;
       border: none;
-      color: var(--text-muted);
+      color: var(--muted-foreground);
       cursor: pointer;
       padding: 0.2rem 0.4rem;
       border-radius: 0.25rem;
       font-size: 0.9rem;
       line-height: 1;
+      transition: all 0.15s ease;
     }
-    .btn-icon:hover { color: var(--danger); background: rgba(244, 63, 94, 0.15); }
+    .btn-icon:hover {
+      color: var(--destructive);
+      background: var(--destructive-background);
+    }
 
     /* Test Dashboard */
     .stats-grid {
@@ -645,15 +730,16 @@
       gap: 1rem;
     }
     .stat-card {
-      background: var(--bg-surface);
+      background: var(--card);
       border: 1px solid var(--border);
       padding: 1rem;
-      border-radius: 0.5rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
     }
     .stat-number { font-size: 1.75rem; font-weight: 700; margin-top: 0.25rem; }
     .stat-green { color: var(--success); }
     .stat-yellow { color: var(--warning); }
-    .stat-red { color: var(--danger); }
+    .stat-red { color: var(--destructive); }
 
     .test-table {
       width: 100%;
@@ -663,14 +749,15 @@
     .test-table th {
       text-align: left;
       padding: 0.75rem 1rem;
-      background: var(--bg-input);
+      background: var(--secondary);
       border-bottom: 1px solid var(--border);
-      color: var(--text-muted);
+      color: var(--muted-foreground);
       font-weight: 600;
     }
     .test-table td {
       padding: 0.75rem 1rem;
       border-bottom: 1px solid var(--border);
+      color: var(--foreground);
     }
     .pill {
       display: inline-block;
@@ -678,16 +765,34 @@
       border-radius: 9999px;
       font-size: 0.72rem;
       font-weight: 700;
+      letter-spacing: 0.02em;
     }
-    .pill-pass { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-    .pill-leak { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-    .pill-crash { background: rgba(244, 63, 94, 0.25); color: #f87171; }
+    .pill-pass {
+      background: var(--success-background);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+    .pill-leak {
+      background: var(--warning-background);
+      color: var(--warning);
+      border: 1px solid var(--warning);
+    }
+    .pill-crash {
+      background: var(--destructive-background);
+      color: var(--destructive);
+      border: 1px solid var(--destructive);
+    }
+    .pill-planned {
+      background: var(--secondary);
+      color: var(--muted-foreground);
+      border: 1px solid var(--border);
+    }
 
     /* Modal */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);
       display: none;
       align-items: center;
@@ -695,9 +800,10 @@
       z-index: 100;
     }
     .modal-box {
-      background: var(--bg-surface);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 0.75rem;
+      border-radius: var(--radius);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
       width: 800px;
       max-width: 90vw;
       max-height: 85vh;
@@ -711,6 +817,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      color: var(--card-foreground);
     }
     .modal-body {
       padding: 1.5rem;
@@ -718,13 +825,13 @@
       flex: 1;
     }
     .code-box {
-      background: var(--bg-input);
+      background: var(--code-background);
       border: 1px solid var(--border);
       padding: 1rem;
-      border-radius: 0.5rem;
+      border-radius: calc(var(--radius) - 3px);
       font-family: var(--font-mono);
       font-size: 0.85rem;
-      color: #f1f5f9;
+      color: var(--code-foreground);
       white-space: pre-wrap;
       overflow-x: auto;
     }
@@ -744,7 +851,7 @@
     .accordion-chevron {
       transition: transform 0.2s ease;
       font-size: 0.8rem;
-      color: var(--text-muted);
+      color: var(--muted-foreground);
       display: inline-block;
     }
     .accordion-chevron.collapsed {
@@ -753,55 +860,45 @@
     .field-tag {
       font-family: var(--font-mono);
       font-size: 0.78rem;
-      background: rgba(99, 102, 241, 0.12);
-      color: #818cf8;
-      border: 1px solid rgba(99, 102, 241, 0.25);
-      padding: 0.15rem 0.45rem;
-      border-radius: 0.3rem;
-      font-weight: 600;
-    }
-    .pill-planned {
-      background: rgba(148, 163, 184, 0.15);
-      color: var(--text-muted);
+      background: var(--accent);
+      color: var(--accent-foreground);
       border: 1px solid var(--border);
+      padding: 0.18rem 0.5rem;
+      border-radius: calc(var(--radius) - 4px);
+      font-weight: 600;
+      display: inline-block;
     }
     .planned-test-row {
       display: grid;
       grid-template-columns: 140px 1fr 140px auto;
       gap: 0.75rem;
       align-items: center;
-      background: var(--bg-input);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 0.4rem;
+      border-radius: calc(var(--radius) - 4px);
       padding: 0.65rem 0.85rem;
       font-size: 0.82rem;
       transition: border-color 0.15s ease;
     }
     .planned-test-row:hover {
-      border-color: rgba(99, 102, 241, 0.5);
-    }
-    [data-theme="light"] .planned-test-row {
-      background: #ffffff;
+      border-color: var(--primary);
     }
 
     /* Grouped Field Collapsible Cards */
     .field-group-card {
-      background: var(--bg-card);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 0.5rem;
+      border-radius: var(--radius);
       overflow: hidden;
       margin-bottom: 0.6rem;
       transition: border-color 0.15s ease;
     }
     .field-group-card:hover {
-      border-color: rgba(99, 102, 241, 0.4);
-    }
-    [data-theme="light"] .field-group-card {
-      background: #f8fafc;
+      border-color: var(--primary);
     }
     .field-group-header {
-      padding: 0.6rem 0.85rem;
-      background: var(--bg-input);
+      padding: 0.65rem 0.95rem;
+      background: var(--secondary);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -809,15 +906,13 @@
       cursor: pointer;
       user-select: none;
       transition: background 0.15s ease;
+      color: var(--secondary-foreground);
     }
     .field-group-header:hover {
-      background: rgba(99, 102, 241, 0.08);
-    }
-    [data-theme="light"] .field-group-header {
-      background: #f1f5f9;
+      background: var(--secondary-hover);
     }
     .field-group-body {
-      padding: 0.6rem 0.85rem;
+      padding: 0.65rem 0.95rem;
       display: flex;
       flex-direction: column;
       gap: 0.45rem;
@@ -827,18 +922,15 @@
       grid-template-columns: 1fr 140px auto;
       gap: 0.75rem;
       align-items: center;
-      background: var(--bg-surface);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 0.35rem;
-      padding: 0.55rem 0.75rem;
+      border-radius: calc(var(--radius) - 4px);
+      padding: 0.6rem 0.85rem;
       font-size: 0.82rem;
       transition: border-color 0.15s ease;
     }
     .field-probe-item:hover {
-      border-color: rgba(99, 102, 241, 0.4);
-    }
-    [data-theme="light"] .field-probe-item {
-      background: #ffffff;
+      border-color: var(--primary);
     }
   </style>
 </head>
@@ -941,7 +1033,7 @@
               <p id="active-summary" style="color: var(--text-muted); font-size: 0.9rem;">Endpoint summary</p>
             </div>
             <div>
-              <button class="btn btn-outline" style="border-color: #6366f1; color: #818cf8; font-size: 0.85rem; font-weight: 600; padding: 0.45rem 0.95rem; display: inline-flex; align-items: center; gap: 0.4rem;" onclick="runBoundaryTestsForCurrentRoute()">
+              <button class="btn btn-outline-primary" style="font-size: 0.85rem; padding: 0.45rem 0.95rem; display: inline-flex; align-items: center; gap: 0.4rem;" onclick="runBoundaryTestsForCurrentRoute()">
                 🧪 Test Boundaries for this Route
               </button>
             </div>
@@ -950,7 +1042,7 @@
           <!-- Live Computed URL Preview -->
           <div class="url-bar">
             <span id="url-method" class="badge-method badge-post" style="padding: 0.15rem 0.4rem;">POST</span>
-            <span id="resolved-url" style="color: #38bdf8; flex: 1;">http://localhost:8000/api/v1/users</span>
+            <span id="resolved-url" style="color: var(--link); flex: 1; font-weight: 500;">http://localhost:8000/api/v1/users</span>
           </div>
         </div>
 
@@ -1100,10 +1192,10 @@
           <div class="accordion-header" onclick="toggleEndpointAccordion()">
             <div style="display: flex; align-items: center; gap: 0.6rem;">
               <span style="font-size: 1.1rem;">🧪</span>
-              <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0;">
+              <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--foreground); margin: 0;">
                 Planned Boundary & Contract Tests for this Endpoint
               </h3>
-              <span id="endpoint-planned-count-badge" class="sub-tab-badge" style="font-size: 0.72rem; padding: 0.15rem 0.5rem; background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); font-weight: 600;">
+              <span id="endpoint-planned-count-badge" class="sub-tab-badge" style="font-size: 0.72rem; padding: 0.15rem 0.5rem; background: var(--accent); color: var(--accent-foreground); border: 1px solid var(--border); font-weight: 600;">
                 0 Tests Planned
               </span>
             </div>
@@ -1111,7 +1203,7 @@
               <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="event.stopPropagation(); toggleAllFieldGroups();" title="Collapse or expand all field groups">
                 📂 Toggle All Fields
               </button>
-              <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.22rem 0.65rem; border-color: #6366f1; color: #818cf8;" onclick="event.stopPropagation(); runBoundaryTestsForCurrentRoute();">
+              <button class="btn btn-outline-primary" style="font-size: 0.75rem; padding: 0.22rem 0.65rem;" onclick="event.stopPropagation(); runBoundaryTestsForCurrentRoute();">
                 ⚡ Run All For This Route
               </button>
               <span id="accordion-chevron" class="accordion-chevron collapsed">▼</span>
@@ -1487,7 +1579,7 @@
       pathParams.forEach((p, idx) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td style="width: 140px; font-weight: 600; font-family: var(--font-mono); font-size: 0.82rem; color: #818cf8;">
+          <td style="width: 140px; font-weight: 600; font-family: var(--font-mono); font-size: 0.82rem; color: var(--primary);">
             {${p.name}}
           </td>
           <td>
@@ -2046,7 +2138,7 @@
         const safeId = `field-grp-${groupIndex}`;
 
         // Determine location tag
-        let locBadge = `<span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#94a3b8; background:rgba(148,163,184,0.12); padding:0.1rem 0.35rem; border-radius:3px;">`;
+        let locBadge = `<span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted-foreground); background:var(--secondary); border:1px solid var(--border); padding:0.1rem 0.35rem; border-radius:3px;">`;
         if (fieldName.startsWith('?')) locBadge += `Query`;
         else if (fieldName.startsWith('Header:')) locBadge += `Header`;
         else if (fieldName.startsWith('Path')) locBadge += `Path`;
@@ -2062,12 +2154,12 @@
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
               ${locBadge}
               <span class="field-tag">${fieldName}</span>
-              <span class="sub-tab-badge" style="background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); font-size: 0.7rem; font-weight: 600;">
+              <span class="sub-tab-badge" style="background: var(--accent); color: var(--accent-foreground); border: 1px solid var(--border); font-size: 0.7rem; font-weight: 600;">
                 ${countText}
               </span>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <button class="btn btn-outline" style="font-size: 0.7rem; padding: 0.18rem 0.5rem;" onclick="event.stopPropagation(); runFieldGroupProbes('${safeId}')" title="Run all tests for this field">
+              <button class="btn btn-outline-primary" style="font-size: 0.7rem; padding: 0.18rem 0.5rem;" onclick="event.stopPropagation(); runFieldGroupProbes('${safeId}')" title="Run all tests for this field">
                 ▶ Test Field Probes (${items.length})
               </button>
               <span id="chevron-${safeId}" class="accordion-chevron">▼</span>
@@ -2101,18 +2193,18 @@
           itemEl.className = "field-probe-item";
           itemEl.innerHTML = `
             <div>
-              <div style="font-weight: 600; color: var(--text-main); font-size: 0.83rem;">${tc.category}</div>
-              <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.1rem;">${tc.desc}</div>
-              <div style="margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.72rem; color: #38bdf8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px;">
+              <div style="font-weight: 600; color: var(--foreground); font-size: 0.83rem;">${tc.category}</div>
+              <div style="color: var(--muted-foreground); font-size: 0.75rem; margin-top: 0.1rem;">${tc.desc}</div>
+              <div style="margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.72rem; color: var(--link); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px;">
                 Probe Value: <code>${valPreview}</code>
               </div>
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;">
-              <span style="font-size: 0.74rem; color: var(--text-muted);">Expected: <strong style="color: var(--text-main);">${tc.expected}</strong></span>
+              <span style="font-size: 0.74rem; color: var(--muted-foreground);">Expected: <strong style="color: var(--foreground);">${tc.expected}</strong></span>
               <div id="route-probe-res-${globalIndex}"><span class="pill pill-planned">READY</span></div>
             </div>
             <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
-              <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="runSingleRouteProbe(${globalIndex}, 'route-probe-res-${globalIndex}')">
+              <button class="btn btn-outline-primary" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="runSingleRouteProbe(${globalIndex}, 'route-probe-res-${globalIndex}')">
                 ▶ Test
               </button>
               <button class="btn-icon" onclick="inspectSingleRouteProbe(${globalIndex})" title="Inspect payload">
