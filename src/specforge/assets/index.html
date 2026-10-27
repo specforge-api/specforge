@@ -457,6 +457,61 @@
       white-space: pre-wrap;
       overflow-x: auto;
     }
+
+    /* Collapsible Planned Tests Accordion */
+    .accordion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      padding: 0.25rem 0;
+    }
+    .accordion-header:hover h3 {
+      color: var(--primary);
+    }
+    .accordion-chevron {
+      transition: transform 0.2s ease;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: inline-block;
+    }
+    .accordion-chevron.collapsed {
+      transform: rotate(-90deg);
+    }
+    .field-tag {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      background: rgba(99, 102, 241, 0.12);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      padding: 0.15rem 0.45rem;
+      border-radius: 0.3rem;
+      font-weight: 600;
+    }
+    .pill-planned {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .planned-test-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 140px auto;
+      gap: 0.75rem;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 0.4rem;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.82rem;
+      transition: border-color 0.15s ease;
+    }
+    .planned-test-row:hover {
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+    [data-theme="light"] .planned-test-row {
+      background: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -658,6 +713,36 @@
             <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
               <span id="response-latency">Latency: -- ms</span>
               <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="copyResponse()">Copy Response</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collapsible Planned Boundary & Contract Tests for this Endpoint -->
+        <div class="card" id="endpoint-tests-accordion">
+          <div class="accordion-header" onclick="toggleEndpointAccordion()">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span style="font-size: 1.1rem;">🧪</span>
+              <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0;">
+                Planned Boundary & Contract Tests for this Endpoint
+              </h3>
+              <span id="endpoint-planned-count-badge" class="sub-tab-badge" style="font-size: 0.72rem; padding: 0.15rem 0.5rem; background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); font-weight: 600;">
+                0 Tests Planned
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.22rem 0.65rem; border-color: #6366f1; color: #818cf8;" onclick="event.stopPropagation(); runBoundaryTestsForCurrentRoute();">
+                ⚡ Run All For This Route
+              </button>
+              <span id="accordion-chevron" class="accordion-chevron">▼</span>
+            </div>
+          </div>
+
+          <div id="endpoint-tests-body" style="margin-top: 1rem; display: block;">
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+              SpecForge synthesizes these edge-case contract probes directly from this endpoint's OpenAPI schema constraints. You can inspect fields and payloads, run individual probes, or execute the full route test:
+            </p>
+            <div id="endpoint-planned-tests-container" style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <!-- Dynamically populated per endpoint -->
             </div>
           </div>
         </div>
@@ -943,6 +1028,7 @@
 
       updateResolvedUrl();
       updateCodeSnippet();
+      renderEndpointPlannedTests();
     }
 
     function switchSubTab(subTabName) {
@@ -1456,6 +1542,156 @@
       });
 
       populateTestScopeDropdown();
+      renderEndpointPlannedTests();
+      renderPlannedTestTable();
+    }
+
+    let isEndpointAccordionOpen = true;
+
+    function toggleEndpointAccordion() {
+      isEndpointAccordionOpen = !isEndpointAccordionOpen;
+      const body = document.getElementById("endpoint-tests-body");
+      const chevron = document.getElementById("accordion-chevron");
+      if (body) {
+        body.style.display = isEndpointAccordionOpen ? "block" : "none";
+      }
+      if (chevron) {
+        chevron.classList.toggle("collapsed", !isEndpointAccordionOpen);
+      }
+    }
+
+    function renderEndpointPlannedTests() {
+      const container = document.getElementById("endpoint-planned-tests-container");
+      const badge = document.getElementById("endpoint-planned-count-badge");
+      if (!container || !badge) return;
+
+      const op = operations[selectedOpIndex];
+      if (!op) return;
+
+      const routeCases = testCases.filter(tc => tc.opMethod === op.method.toLowerCase() && tc.opPath === op.path);
+      badge.textContent = `${routeCases.length} Tests Planned`;
+
+      if (routeCases.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 1.25rem;">No schema-constrained boundary tests synthesized for this route.</div>`;
+        return;
+      }
+
+      container.innerHTML = "";
+      routeCases.forEach((tc, i) => {
+        let locBadge = `<span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#94a3b8; background:rgba(148,163,184,0.12); padding:0.1rem 0.35rem; border-radius:3px;">`;
+        if (tc.field.startsWith('?')) locBadge += `Query`;
+        else if (tc.field.startsWith('Header:')) locBadge += `Header`;
+        else if (tc.field.startsWith('Path')) locBadge += `Path`;
+        else locBadge += `Body`;
+        locBadge += `</span>`;
+
+        let valPreview = "";
+        if (tc.payload && typeof tc.payload === 'object') {
+          const targetVal = tc.payload[tc.field];
+          if (targetVal !== undefined) {
+            valPreview = JSON.stringify(targetVal);
+          } else {
+            valPreview = `(Field omitted)`;
+          }
+        } else if (tc.field.startsWith('?')) {
+          const qVal = tc.endpoint.split('?')[1] || '';
+          valPreview = decodeURIComponent(qVal);
+        } else if (tc.field.startsWith('Header:')) {
+          valPreview = `Missing auth header`;
+        } else {
+          valPreview = `Below min length ('x')`;
+        }
+
+        const row = document.createElement("div");
+        row.className = "planned-test-row";
+        row.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+              ${locBadge}
+              <span class="field-tag">${tc.field}</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-weight: 600; color: var(--text-main); font-size: 0.84rem;">${tc.category}</div>
+            <div style="color: var(--text-muted); font-size: 0.76rem; margin-top: 0.1rem;">${tc.desc}</div>
+            <div style="margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.72rem; color: #38bdf8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px;">
+              Probe Value: <code>${valPreview}</code>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;">
+            <span style="font-size: 0.74rem; color: var(--text-muted);">Expected: <strong style="color: var(--text-main);">${tc.expected}</strong></span>
+            <div id="route-probe-res-${i}"><span class="pill pill-planned">READY</span></div>
+          </div>
+          <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+            <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="runSingleRouteProbe(${i}, 'route-probe-res-${i}')">
+              ▶ Test
+            </button>
+            <button class="btn-icon" onclick="inspectSingleRouteProbe(${i})" title="Inspect payload">
+              🔍
+            </button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    async function runSingleRouteProbe(idx, resultElementId) {
+      const op = operations[selectedOpIndex];
+      if (!op) return;
+      const routeCases = testCases.filter(tc => tc.opMethod === op.method.toLowerCase() && tc.opPath === op.path);
+      const tc = routeCases[idx];
+      if (!tc) return;
+
+      const resEl = document.getElementById(resultElementId);
+      if (resEl) resEl.innerHTML = `<span style="font-size:0.75rem; color: var(--text-muted);">Testing...</span>`;
+
+      const start = performance.now();
+      let status = 0;
+      let respText = "";
+      try {
+        const opts = {
+          method: tc.method.toUpperCase(),
+          headers: { 'Content-Type': 'application/json' }
+        };
+        if (tc.payload) opts.body = JSON.stringify(tc.payload);
+
+        const res = await fetch(tc.endpoint, opts);
+        status = res.status;
+        respText = await res.text();
+      } catch (e) {
+        status = 0;
+        respText = e.message;
+      }
+      const latency = Math.round(performance.now() - start);
+
+      let pillClass = "pill-pass";
+      let statusLabel = "PASS";
+      if (status >= 500) {
+        pillClass = "pill-crash";
+        statusLabel = "CRASH (500)";
+      } else if (status >= 200 && status < 300) {
+        pillClass = "pill-leak";
+        statusLabel = "LEAK (200)";
+      } else if (status === 400 || status === 422 || status === 401) {
+        pillClass = "pill-pass";
+        statusLabel = `PASS (${status})`;
+      } else {
+        pillClass = "pill-leak";
+        statusLabel = `${status}`;
+      }
+
+      if (resEl) {
+        resEl.innerHTML = `<span class="pill ${pillClass}">${statusLabel}</span> <span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.25rem;">${latency}ms</span>`;
+      }
+    }
+
+    function inspectSingleRouteProbe(idx) {
+      const op = operations[selectedOpIndex];
+      if (!op) return;
+      const routeCases = testCases.filter(tc => tc.opMethod === op.method.toLowerCase() && tc.opPath === op.path);
+      const tc = routeCases[idx];
+      if (!tc) return;
+      alert(`Planned Boundary Test Probe Details:\n\nTarget Field: ${tc.field}\nCategory: ${tc.category}\nDescription: ${tc.desc}\nExpected Status: HTTP ${tc.expected}\nEndpoint Target: ${tc.endpoint}\n\nPayload:\n` + JSON.stringify(tc.payload, null, 2));
     }
 
     function populateTestScopeDropdown() {
@@ -1481,11 +1717,37 @@
 
     function onTestScopeChange() {
       updateScopeStats();
+      renderPlannedTestTable();
+    }
+
+    function renderPlannedTestTable() {
       const tbody = document.getElementById("test-table-body");
       const activeCases = getActiveTestCases();
-      const sel = document.getElementById("test-scope-select");
-      const scopeLabel = sel && sel.value !== "all" ? sel.value.toUpperCase() : "all endpoints";
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Ready to run <strong>${activeCases.length} tests</strong> for ${scopeLabel}. Click <strong>⚡ Run Selected Scope</strong>.</td></tr>`;
+      window.__activeTestCases = activeCases;
+      tbody.innerHTML = "";
+
+      if (activeCases.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No tests planned for this scope.</td></tr>`;
+        return;
+      }
+
+      activeCases.forEach((tc, i) => {
+        const tr = document.createElement("tr");
+        tr.id = `test-row-${i}`;
+        tr.innerHTML = `
+          <td><span class="pill pill-planned">PLANNED</span></td>
+          <td><span class="badge-method badge-${tc.opMethod}">${tc.opMethod.toUpperCase()}</span> <code style="font-size:0.8rem; color: var(--text-main); margin-left: 0.35rem;">${tc.opPath}</code></td>
+          <td><span class="field-tag">${tc.field}</span></td>
+          <td><strong>${tc.category}</strong><br><span style="color:var(--text-muted);font-size:0.75rem;">${tc.desc}</span></td>
+          <td>Expected ${tc.expected}</td>
+          <td>--</td>
+          <td>
+            <button class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="runSingleBoundaryTest(${i})">▶ Run</button>
+            <button class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="inspectTestPayload(${i})">Inspect</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
     function getActiveTestCases() {
@@ -1516,17 +1778,73 @@
       executeBoundaryTests();
     }
 
+    async function runSingleBoundaryTest(idx) {
+      const activeCases = getActiveTestCases();
+      const tc = activeCases[idx];
+      if (!tc) return;
+
+      const row = document.getElementById(`test-row-${idx}`);
+      if (row) {
+        row.cells[0].innerHTML = `<span style="font-size:0.75rem; color:var(--text-muted);">Testing...</span>`;
+      }
+
+      const start = performance.now();
+      let status = 0;
+      let respText = "";
+      try {
+        const opts = {
+          method: tc.method.toUpperCase(),
+          headers: { 'Content-Type': 'application/json' }
+        };
+        if (tc.payload) opts.body = JSON.stringify(tc.payload);
+
+        const res = await fetch(tc.endpoint, opts);
+        status = res.status;
+        respText = await res.text();
+      } catch (e) {
+        status = 0;
+        respText = e.message;
+      }
+      const latency = Math.round(performance.now() - start);
+
+      let pillClass = "pill-pass";
+      let statusLabel = "PASS";
+      if (status >= 500) {
+        pillClass = "pill-crash";
+        statusLabel = "CRASH (500)";
+      } else if (status >= 200 && status < 300) {
+        pillClass = "pill-leak";
+        statusLabel = "LEAK (200)";
+      } else if (status === 400 || status === 422 || status === 401) {
+        pillClass = "pill-pass";
+        statusLabel = `PASS (${status})`;
+      } else {
+        pillClass = "pill-leak";
+        statusLabel = `${status}`;
+      }
+
+      if (row) {
+        row.cells[0].innerHTML = `<span class="pill ${pillClass}">${statusLabel}</span>`;
+        row.cells[4].textContent = `Expected ${tc.expected} | Got ${status}`;
+        row.cells[5].textContent = `${latency} ms`;
+      }
+    }
+
     async function executeBoundaryTests() {
       const activeCases = getActiveTestCases();
       window.__activeTestCases = activeCases;
-      const tbody = document.getElementById("test-table-body");
-      tbody.innerHTML = "";
+      renderPlannedTestTable();
       let passCount = 0;
       let leakCount = 0;
       let crashCount = 0;
 
       for (let i = 0; i < activeCases.length; i++) {
         const tc = activeCases[i];
+        const row = document.getElementById(`test-row-${i}`);
+        if (row) {
+          row.cells[0].innerHTML = `<span style="font-size:0.75rem; color:var(--text-muted);">Testing...</span>`;
+        }
+
         const start = performance.now();
         let status = 0;
         let respText = "";
@@ -1566,17 +1884,11 @@
           statusLabel = `${status}`;
         }
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><span class="pill ${pillClass}">${statusLabel}</span></td>
-          <td><span class="badge-method badge-${tc.opMethod}">${tc.opMethod.toUpperCase()}</span> <code style="font-size:0.8rem; color: var(--text-main); margin-left: 0.35rem;">${tc.opPath}</code></td>
-          <td><code>${tc.field}</code></td>
-          <td><strong>${tc.category}</strong><br><span style="color:var(--text-muted);font-size:0.75rem;">${tc.desc}</span></td>
-          <td>Expected ${tc.expected} | Got ${status}</td>
-          <td>${latency} ms</td>
-          <td><button class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="inspectTestPayload(${i})">Inspect</button></td>
-        `;
-        tbody.appendChild(tr);
+        if (row) {
+          row.cells[0].innerHTML = `<span class="pill ${pillClass}">${statusLabel}</span>`;
+          row.cells[4].textContent = `Expected ${tc.expected} | Got ${status}`;
+          row.cells[5].textContent = `${latency} ms`;
+        }
 
         document.getElementById("stat-pass").textContent = passCount;
         document.getElementById("stat-leak").textContent = leakCount;
