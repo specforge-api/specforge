@@ -1200,6 +1200,9 @@
               </span>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="event.stopPropagation(); openAddCustomTestModal();" title="Add a custom test case for this route">
+                ➕ Add Custom Test
+              </button>
               <button class="btn btn-outline" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="event.stopPropagation(); toggleAllFieldGroups();" title="Collapse or expand all field groups">
                 📂 Toggle All Fields
               </button>
@@ -1322,6 +1325,108 @@
       <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem;">
         <button class="btn btn-outline" onclick="closePytestModal()">Close</button>
         <button class="btn btn-primary" onclick="copyPytestCode()">Copy Pytest Code</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Field Test Modal -->
+  <div id="custom-test-modal" class="modal-overlay">
+    <div class="modal-box" style="width: 600px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.1rem;">🧪</span>
+          <h3 style="font-size: 1.05rem; font-weight: 700;">Add Custom Field Test</h3>
+        </div>
+        <button onclick="closeAddCustomTestModal()" class="btn-icon" style="font-size: 1.2rem;">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.9rem;">
+        <!-- Active Route Context Banner -->
+        <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; background: var(--secondary); border: 1px solid var(--border); border-radius: calc(var(--radius) - 4px); font-size: 0.8rem;">
+          <span id="custom-modal-route-method" class="badge-method badge-post">POST</span>
+          <span id="custom-modal-route-path" style="font-family: var(--font-mono); font-weight: 600;">/api/v1/users</span>
+        </div>
+
+        <!-- Target Field Selection -->
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Target Field</label>
+            <select id="custom-field-select" class="kv-input" onchange="onCustomFieldSelectChange()">
+              <!-- Populated dynamically -->
+            </select>
+            <input type="text" id="custom-field-name-input" class="kv-input" placeholder="Type custom field name..." style="margin-top: 0.4rem; display: none;">
+          </div>
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Location</label>
+            <select id="custom-field-location" class="kv-input">
+              <option value="body">Request Body (JSON)</option>
+              <option value="query">Query Parameter</option>
+              <option value="path">Path Variable</option>
+              <option value="header">Request Header</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Category & Expected Status -->
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Test Category / Strategy</label>
+            <input type="text" id="custom-category-input" class="kv-input" placeholder="e.g. Custom Boundary, Security: SQLi" list="custom-category-suggestions">
+            <datalist id="custom-category-suggestions">
+              <option value="Custom Boundary">
+              <option value="Business Logic: Limit">
+              <option value="Security: SQL Injection">
+              <option value="Security: XSS / Scripting">
+              <option value="Special Characters / Unicode">
+              <option value="Formatting / RegEx">
+              <option value="Temporal / Expiration">
+            </datalist>
+          </div>
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Expected Status</label>
+            <select id="custom-expected-status" class="kv-input">
+              <option value="422" selected>422 Unprocessable</option>
+              <option value="400">400 Bad Request</option>
+              <option value="401">401 Unauthorized</option>
+              <option value="403">403 Forbidden</option>
+              <option value="404">404 Not Found</option>
+              <option value="200">200 OK (Allowed)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">Description / Rationale (Optional)</label>
+          <input type="text" id="custom-desc-input" class="kv-input" placeholder="e.g. Reject usernames containing SQL wildcards or comments">
+        </div>
+
+        <!-- Value Type & Input -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+            <label style="font-size: 0.78rem; font-weight: 600;">Test Value to Inject</label>
+            <div style="display: flex; gap: 0.5rem; font-size: 0.74rem;">
+              <label style="display: inline-flex; align-items: center; gap: 0.2rem; cursor: pointer;">
+                <input type="radio" name="custom-val-type" value="string" checked onchange="onCustomValTypeChange()"> String
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 0.2rem; cursor: pointer;">
+                <input type="radio" name="custom-val-type" value="number" onchange="onCustomValTypeChange()"> Number
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 0.2rem; cursor: pointer;">
+                <input type="radio" name="custom-val-type" value="boolean" onchange="onCustomValTypeChange()"> Boolean
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 0.2rem; cursor: pointer;">
+                <input type="radio" name="custom-val-type" value="json" onchange="onCustomValTypeChange()"> Raw JSON
+              </label>
+            </div>
+          </div>
+          <textarea id="custom-val-input" class="editor-box" style="height: 100px;" placeholder="Type test probe value (e.g. admin' OR '1'='1 or 9999)..."></textarea>
+          <div id="custom-val-error" style="color: var(--destructive); font-size: 0.74rem; margin-top: 0.25rem; display: none;"></div>
+        </div>
+      </div>
+
+      <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn btn-outline" onclick="closeAddCustomTestModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCustomFieldTest()">Save Test Case</button>
       </div>
     </div>
   </div>
@@ -2052,9 +2157,309 @@
         }
       });
 
+      // Merge client-side custom probes from localStorage
+      mergeCustomProbesFromStorage();
+
       populateTestScopeDropdown();
       renderEndpointPlannedTests();
       renderPlannedTestTable();
+    }
+
+    // --- Custom Field Test Probes (Pure Client-Side / LocalStorage) ---
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeJs(str) {
+      if (!str) return "";
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    function getCustomProbesFromStorage() {
+      try {
+        const raw = localStorage.getItem("specforge_custom_probes");
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        console.error("Failed to load custom probes:", e);
+        return [];
+      }
+    }
+
+    function saveCustomProbesToStorage(probes) {
+      try {
+        localStorage.setItem("specforge_custom_probes", JSON.stringify(probes));
+      } catch (e) {
+        console.error("Failed to save custom probes:", e);
+      }
+    }
+
+    function mergeCustomProbesFromStorage() {
+      const customProbes = getCustomProbesFromStorage();
+      if (!Array.isArray(customProbes)) return;
+
+      customProbes.forEach(probe => {
+        const op = operations.find(o => o.method.toLowerCase() === probe.opMethod.toLowerCase() && o.path === probe.opPath);
+        if (!op) return;
+
+        let payload = null;
+        let endpoint = op.path;
+
+        let parsedVal = probe.value;
+        if (probe.valType === 'number') {
+          parsedVal = Number(probe.value);
+          if (isNaN(parsedVal)) parsedVal = probe.value;
+        } else if (probe.valType === 'boolean') {
+          parsedVal = (probe.value === true || String(probe.value).toLowerCase() === 'true');
+        } else if (probe.valType === 'json') {
+          try {
+            parsedVal = JSON.parse(probe.value);
+          } catch(e) {
+            parsedVal = probe.value;
+          }
+        }
+
+        const schema = op.raw?.requestBody?.content?.['application/json']?.schema;
+        const baseline = schema ? generateMockFromSchema(schema) : {};
+
+        if (probe.location === 'body') {
+          payload = { ...baseline, [probe.field]: parsedVal };
+        } else if (probe.location === 'query') {
+          const qKey = probe.field.replace(/^\?/, '');
+          endpoint = `${op.path}?${encodeURIComponent(qKey)}=${encodeURIComponent(probe.value)}`;
+        } else if (probe.location === 'path') {
+          endpoint = op.path.replace(/\{([^}]+)\}/g, encodeURIComponent(probe.value));
+        }
+
+        testCases.push({
+          id: probe.id,
+          isCustom: true,
+          opMethod: probe.opMethod.toLowerCase(),
+          opPath: probe.opPath,
+          endpoint: endpoint,
+          method: probe.opMethod.toLowerCase(),
+          field: probe.field,
+          location: probe.location,
+          category: probe.category || "Custom Boundary",
+          desc: probe.desc || `Custom test probe for '${probe.field}'`,
+          payload: payload,
+          expected: Number(probe.expected) || 422
+        });
+      });
+    }
+
+    function openAddCustomTestModal(prefilledField) {
+      const op = operations[selectedOpIndex];
+      if (!op) return;
+
+      document.getElementById("custom-modal-route-method").className = `badge-method badge-${op.method}`;
+      document.getElementById("custom-modal-route-method").textContent = op.method.toUpperCase();
+      document.getElementById("custom-modal-route-path").textContent = op.path;
+
+      // Populate field dropdown
+      const sel = document.getElementById("custom-field-select");
+      sel.innerHTML = "";
+
+      const schema = op.raw?.requestBody?.content?.['application/json']?.schema;
+      const rawParams = op.raw?.parameters || [];
+
+      // Add body fields
+      if (schema && schema.properties) {
+        const bodyOptGroup = document.createElement("optgroup");
+        bodyOptGroup.label = "Body Properties";
+        for (const propName of Object.keys(schema.properties)) {
+          const opt = document.createElement("option");
+          opt.value = propName;
+          opt.textContent = `${propName} (body)`;
+          opt.dataset.location = "body";
+          bodyOptGroup.appendChild(opt);
+        }
+        sel.appendChild(bodyOptGroup);
+      }
+
+      // Add query params
+      const queryParams = rawParams.filter(p => p.in === 'query');
+      if (queryParams.length > 0) {
+        const qOptGroup = document.createElement("optgroup");
+        qOptGroup.label = "Query Parameters";
+        queryParams.forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = `?${p.name}`;
+          opt.textContent = `?${p.name} (query)`;
+          opt.dataset.location = "query";
+          qOptGroup.appendChild(opt);
+        });
+        sel.appendChild(qOptGroup);
+      }
+
+      // Add path params
+      const pathMatches = op.path.match(/\{([^}]+)\}/g) || [];
+      if (pathMatches.length > 0) {
+        const pOptGroup = document.createElement("optgroup");
+        pOptGroup.label = "Path Variables";
+        pathMatches.forEach(m => {
+          const pName = m.replace(/[{}]/g, '');
+          const opt = document.createElement("option");
+          opt.value = pName;
+          opt.textContent = `{${pName}} (path)`;
+          opt.dataset.location = "path";
+          pOptGroup.appendChild(opt);
+        });
+        sel.appendChild(pOptGroup);
+      }
+
+      // Add custom manual field option
+      const customOpt = document.createElement("option");
+      customOpt.value = "__custom__";
+      customOpt.textContent = "➕ Enter Custom Field Name...";
+      sel.appendChild(customOpt);
+
+      // Pre-select field if passed
+      if (prefilledField) {
+        const existing = [...sel.options].find(o => o.value === prefilledField);
+        if (existing) {
+          sel.value = prefilledField;
+        } else {
+          sel.value = "__custom__";
+          document.getElementById("custom-field-name-input").value = prefilledField;
+        }
+      } else {
+        if (sel.options.length > 1) {
+          sel.selectedIndex = 0;
+        }
+      }
+
+      onCustomFieldSelectChange();
+
+      // Reset form fields
+      document.getElementById("custom-category-input").value = "Custom Boundary";
+      document.getElementById("custom-expected-status").value = "422";
+      document.getElementById("custom-desc-input").value = "";
+      document.getElementById("custom-val-input").value = "";
+      document.getElementById("custom-val-error").style.display = "none";
+      document.querySelector('input[name="custom-val-type"][value="string"]').checked = true;
+      onCustomValTypeChange();
+
+      document.getElementById("custom-test-modal").style.display = "flex";
+    }
+
+    function closeAddCustomTestModal() {
+      document.getElementById("custom-test-modal").style.display = "none";
+    }
+
+    function onCustomFieldSelectChange() {
+      const sel = document.getElementById("custom-field-select");
+      const customInput = document.getElementById("custom-field-name-input");
+      const locSelect = document.getElementById("custom-field-location");
+
+      if (sel.value === "__custom__") {
+        customInput.style.display = "block";
+        customInput.focus();
+      } else {
+        customInput.style.display = "none";
+        const selectedOpt = sel.options[sel.selectedIndex];
+        if (selectedOpt && selectedOpt.dataset.location) {
+          locSelect.value = selectedOpt.dataset.location;
+        }
+      }
+    }
+
+    function onCustomValTypeChange() {
+      const type = document.querySelector('input[name="custom-val-type"]:checked')?.value || 'string';
+      const input = document.getElementById("custom-val-input");
+      if (type === 'string') {
+        input.placeholder = "Enter custom string value (e.g. admin' OR '1'='1 or <script>)...";
+      } else if (type === 'number') {
+        input.placeholder = "Enter numeric value (e.g. 99999 or -99)...";
+      } else if (type === 'boolean') {
+        input.placeholder = "true or false";
+      } else if (type === 'json') {
+        input.placeholder = '{\n  "custom_nested": "value"\n}';
+      }
+    }
+
+    function saveCustomFieldTest() {
+      const op = operations[selectedOpIndex];
+      if (!op) return;
+
+      const sel = document.getElementById("custom-field-select");
+      const customNameInput = document.getElementById("custom-field-name-input");
+      let fieldName = sel.value === "__custom__" ? customNameInput.value.trim() : sel.value;
+
+      const errEl = document.getElementById("custom-val-error");
+      errEl.style.display = "none";
+
+      if (!fieldName) {
+        errEl.textContent = "Please specify a target field name.";
+        errEl.style.display = "block";
+        return;
+      }
+
+      const location = document.getElementById("custom-field-location").value;
+      const category = document.getElementById("custom-category-input").value.trim() || "Custom Boundary";
+      const expected = parseInt(document.getElementById("custom-expected-status").value, 10) || 422;
+      const desc = document.getElementById("custom-desc-input").value.trim() || `Custom probe for '${fieldName}'`;
+      const valType = document.querySelector('input[name="custom-val-type"]:checked')?.value || 'string';
+      const rawVal = document.getElementById("custom-val-input").value;
+
+      if (valType === 'json') {
+        try {
+          JSON.parse(rawVal);
+        } catch (e) {
+          errEl.textContent = "Invalid JSON format: " + e.message;
+          errEl.style.display = "block";
+          return;
+        }
+      } else if (valType === 'number') {
+        if (rawVal.trim() === "" || isNaN(Number(rawVal))) {
+          errEl.textContent = "Please enter a valid numeric value.";
+          errEl.style.display = "block";
+          return;
+        }
+      }
+
+      const customProbe = {
+        id: "cust_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+        opMethod: op.method.toLowerCase(),
+        opPath: op.path,
+        field: fieldName,
+        location: location,
+        category: category,
+        desc: desc,
+        valType: valType,
+        value: rawVal,
+        expected: expected,
+        createdAt: Date.now()
+      };
+
+      const probes = getCustomProbesFromStorage();
+      probes.unshift(customProbe);
+      saveCustomProbesToStorage(probes);
+
+      // Refresh synthesized test plan & views
+      synthesizeTestPlan();
+
+      // Ensure planned tests section is expanded
+      isEndpointAccordionOpen = true;
+      const body = document.getElementById("endpoint-tests-body");
+      const chevron = document.getElementById("accordion-chevron");
+      if (body) body.style.display = "block";
+      if (chevron) chevron.classList.remove("collapsed");
+
+      closeAddCustomTestModal();
+    }
+
+    function deleteCustomProbe(probeId) {
+      if (!confirm("Are you sure you want to remove this custom test?")) return;
+      const probes = getCustomProbesFromStorage();
+      const updated = probes.filter(p => p.id !== probeId);
+      saveCustomProbesToStorage(updated);
+      synthesizeTestPlan();
     }
 
     let isEndpointAccordionOpen = false;
@@ -2158,7 +2563,10 @@
                 ${countText}
               </span>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <button class="btn btn-outline" style="font-size: 0.68rem; padding: 0.16rem 0.45rem;" onclick="event.stopPropagation(); openAddCustomTestModal('${escapeJs(fieldName)}')" title="Add custom probe for this field">
+                + Add Test
+              </button>
               <button class="btn btn-outline-primary" style="font-size: 0.7rem; padding: 0.18rem 0.5rem;" onclick="event.stopPropagation(); runFieldGroupProbes('${safeId}')" title="Run all tests for this field">
                 ▶ Test Field Probes (${items.length})
               </button>
@@ -2193,23 +2601,27 @@
           itemEl.className = "field-probe-item";
           itemEl.innerHTML = `
             <div>
-              <div style="font-weight: 600; color: var(--foreground); font-size: 0.83rem;">${tc.category}</div>
-              <div style="color: var(--muted-foreground); font-size: 0.75rem; margin-top: 0.1rem;">${tc.desc}</div>
+              <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                <span style="font-weight: 600; color: var(--foreground); font-size: 0.83rem;">${escapeHtml(tc.category)}</span>
+                ${tc.isCustom ? `<span style="font-size:0.62rem; font-weight:700; color:var(--primary); background:var(--accent); border:1px solid var(--border); padding:0.06rem 0.35rem; border-radius:3px; letter-spacing:0.03em;">CUSTOM</span>` : ''}
+              </div>
+              <div style="color: var(--muted-foreground); font-size: 0.75rem; margin-top: 0.1rem;">${escapeHtml(tc.desc)}</div>
               <div style="margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.72rem; color: var(--link); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px;">
-                Probe Value: <code>${valPreview}</code>
+                Probe Value: <code>${escapeHtml(valPreview)}</code>
               </div>
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;">
               <span style="font-size: 0.74rem; color: var(--muted-foreground);">Expected: <strong style="color: var(--foreground);">${tc.expected}</strong></span>
               <div id="route-probe-res-${globalIndex}"><span class="pill pill-planned">READY</span></div>
             </div>
-            <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+            <div style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center;">
               <button class="btn btn-outline-primary" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="runSingleRouteProbe(${globalIndex}, 'route-probe-res-${globalIndex}')">
                 ▶ Test
               </button>
               <button class="btn-icon" onclick="inspectSingleRouteProbe(${globalIndex})" title="Inspect payload">
                 🔍
               </button>
+              ${tc.isCustom ? `<button class="btn-icon" onclick="deleteCustomProbe('${escapeJs(tc.id)}')" title="Delete custom probe" style="color:var(--destructive); font-size: 0.8rem; padding: 0.2rem 0.35rem;">🗑️</button>` : ''}
             </div>
           `;
           bodyEl.appendChild(itemEl);
@@ -2319,15 +2731,19 @@
         const tr = document.createElement("tr");
         tr.id = `test-row-${i}`;
         tr.innerHTML = `
-          <td><span class="pill pill-planned">PLANNED</span></td>
-          <td><span class="badge-method badge-${tc.opMethod}">${tc.opMethod.toUpperCase()}</span> <code style="font-size:0.8rem; color: var(--text-main); margin-left: 0.35rem;">${tc.opPath}</code></td>
-          <td><span class="field-tag">${tc.field}</span></td>
-          <td><strong>${tc.category}</strong><br><span style="color:var(--text-muted);font-size:0.75rem;">${tc.desc}</span></td>
+          <td>
+            <span class="pill pill-planned">PLANNED</span>
+            ${tc.isCustom ? `<span style="font-size:0.62rem; font-weight:700; color:var(--primary); background:var(--accent); border:1px solid var(--border); padding:0.06rem 0.35rem; border-radius:3px; margin-left:0.3rem;">CUSTOM</span>` : ''}
+          </td>
+          <td><span class="badge-method badge-${tc.opMethod}">${tc.opMethod.toUpperCase()}</span> <code style="font-size:0.8rem; color: var(--foreground); margin-left: 0.35rem;">${escapeHtml(tc.opPath)}</code></td>
+          <td><span class="field-tag">${escapeHtml(tc.field)}</span></td>
+          <td><strong>${escapeHtml(tc.category)}</strong><br><span style="color:var(--muted-foreground);font-size:0.75rem;">${escapeHtml(tc.desc)}</span></td>
           <td>Expected ${tc.expected}</td>
           <td>--</td>
-          <td>
+          <td style="white-space: nowrap;">
             <button class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="runSingleBoundaryTest(${i})">▶ Run</button>
             <button class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="inspectTestPayload(${i})">Inspect</button>
+            ${tc.isCustom ? `<button class="btn-icon" style="color:var(--destructive);" onclick="deleteCustomProbe('${escapeJs(tc.id)}')" title="Delete custom probe">🗑️</button>` : ''}
           </td>
         `;
         tbody.appendChild(tr);
