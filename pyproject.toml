@@ -63,10 +63,10 @@ dev = [
 specforge = "specforge.cli.main:cli_entrypoint"
 
 [project.urls]
-Homepage = "https://github.com/specforge/specforge"
-Documentation = "https://github.com/specforge/specforge#readme"
-Repository = "https://github.com/specforge/specforge"
-Issues = "https://github.com/specforge/specforge/issues"
+Homepage = "https://github.com/specforge-api/specforge"
+Documentation = "https://github.com/specforge-api/specforge#readme"
+Repository = "https://github.com/specforge-api/specforge"
+Issues = "https://github.com/specforge-api/specforge/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/specforge"]
