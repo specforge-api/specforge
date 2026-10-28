@@ -86,6 +86,64 @@ SpecForge generates targeted test cases according to field types:
 
 ---
 
+## 📁 Integrating Existing Project Tests
+
+If your repository already contains test suites (written in `pytest` or `unittest`), SpecForge can automatically index and display them in a dedicated **Project Tests** tab and link them directly to their corresponding API routes.
+
+### Quick Setup
+
+Pass `test_paths` when mounting SpecForge in your application:
+
+```python
+from fastapi import FastAPI
+from specforge import SpecForge
+
+app = FastAPI()
+
+# Mount SpecForge with existing project tests
+SpecForge(
+    app,
+    test_paths=["tests"],  # Can be directories or individual test files
+)
+```
+
+Now open `/docs` to see:
+- **📁 Project Tests Tab**: Browse all repository tests, file paths, line numbers, docstrings, and parameter matrices.
+- **Route Coverage Linking**: View your existing tests directly inside the API Explorer alongside SpecForge's automated boundary fuzzers.
+
+### Linking Tests to API Routes
+
+SpecForge associates existing tests with OpenAPI routes using two mechanisms:
+
+#### 1. Automatic HTTP Client Detection (Zero Configuration)
+If your test uses `TestClient`, `httpx`, or `requests` to call an API path, SpecForge automatically recognizes the route:
+```python
+def test_user_creation_underage(client):
+    """Rejects underage registrations."""
+    response = client.post("/api/v1/users", json={"username": "bob", "age": 16})
+    assert response.status_code == 422
+```
+
+#### 2. Explicit Pytest Marker (Recommended for Complex Tests)
+For tests with dynamic URLs or mocks, declare the endpoint explicitly:
+```python
+import pytest
+
+@pytest.mark.endpoint("POST", "/api/v1/users")
+def test_user_signup_pipeline():
+    """End-to-end user registration and event dispatch."""
+    ...
+```
+
+### 🔒 Security & Zero-Execution Guarantee
+
+SpecForge uses **Python Static Abstract Syntax Tree (AST) parsing** to discover tests:
+- **Zero Code Execution**: SpecForge **never** imports or executes your test files. Tests are analyzed purely as static syntax trees.
+- **No Side Effects**: Discovering tests will never trigger database operations, background tasks, or network calls.
+- **Path Sandboxing**: Scanned paths are strictly verified to remain within the project root directory, preventing any path traversal.
+
+---
+
 ## 🛠️ CLI & CI/CD Pipeline
 
 Run headless contract fuzzing in your continuous integration pipeline:
