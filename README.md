@@ -8,6 +8,10 @@
 
 A modern, drop-in Python library that replaces Swagger UI with a beautiful, responsive API workspace **and** automatically discovers boundary vulnerabilities, missing whitespace stripping, and unhandled 500 server crashes directly against your endpoints.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/specforge-api/specforge/main/docs/images/specforge-preview.png" alt="SpecForge Interactive Studio & Contract Fuzzer" width="100%" />
+</p>
+
 ---
 
 ## 🚀 Why SpecForge?
