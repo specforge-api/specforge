@@ -36,3 +36,4 @@ config = SpecForgeConfig(
 
 SpecForge(app, config=config)
 ```
+

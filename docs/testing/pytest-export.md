@@ -88,3 +88,4 @@ def test_post_users_invariants(case):
         )
         assert response.status_code == case["expected_status"]
 ```
+

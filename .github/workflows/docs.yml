@@ -31,3 +31,4 @@ jobs:
 
       - name: Deploy MkDocs to GitHub Pages
         run: mkdocs gh-deploy --force
+

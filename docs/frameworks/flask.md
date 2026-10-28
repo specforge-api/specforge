@@ -53,3 +53,4 @@ When mounting on a Flask application:
 | `title` | `str` | `"SpecForge - API Explorer & Quality Gate"` | HTML page title. |
 | `theme` | `str` | `"theme-1"` | Initial UI color theme (`theme-1`, `theme-2`, `theme-3`, `theme-4`). |
 | `test_paths` | `list[str]` | `None` | Directories or files to discover existing pytest/unittest suites. |
+

@@ -83,3 +83,4 @@ def test_complex_billing_workflow(billing_fixture):
 
 - **Zero Arbitrary Execution**: Tests are discovered via Python's Abstract Syntax Tree (`ast`). SpecForge never runs unvetted test files during discovery.
 - **Safe Path Traversal Protection**: SpecForge ensures all scanned files reside strictly within permitted project directories.
+

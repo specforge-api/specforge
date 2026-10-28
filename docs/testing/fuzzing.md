@@ -51,3 +51,4 @@ SpecForge inspects parameter and request body schemas to synthesize edge cases:
 3. Scroll down to the **Automated Contract Tests** section.
 4. Click **Run All Invariant Tests**.
 5. SpecForge will execute the suite in real-time, displaying passing invariants in green and flagging any `500 Server Crashes` in red with full cURL reproduction snippets!
+
