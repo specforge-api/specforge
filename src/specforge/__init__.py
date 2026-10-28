@@ -5,7 +5,7 @@ from specforge.parser.openapi3 import OpenAPIParser
 from specforge.testing.exporters.pytest_export import PytestExporter
 from specforge.testing.planner import TestPlanner
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 # Conditionally import FastAPI adapter if available
 try:
