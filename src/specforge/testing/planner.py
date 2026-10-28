@@ -3,7 +3,7 @@
 import copy
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any
 
 from specforge.parser.models import Operation
 from specforge.testing.fuzzers.array_fuzzer import ArrayFuzzer
@@ -21,9 +21,9 @@ class TestPlan:
     operation_key: str
     endpoint: str
     method: str
-    test_cases: List[TestCase] = field(default_factory=list)
+    test_cases: list[TestCase] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert test plan to dictionary."""
         return {
             "operation_key": self.operation_key,
@@ -40,7 +40,7 @@ class TestPlanner:
     @classmethod
     def plan_operation_tests(cls, operation: Operation) -> TestPlan:
         """Construct full boundary and negative test suite for a single operation."""
-        test_cases: List[TestCase] = []
+        test_cases: list[TestCase] = []
         op_key = operation.key
         endpoint = operation.path
         method = operation.method.lower()
@@ -109,7 +109,7 @@ class TestPlanner:
                             endpoint=endpoint,
                             method=method,
                             field_name=prop_name,
-                            mutation_category=f"{schema_type.capitalize()}:{mut_cat}",
+                            mutation_category=f"{str(schema_type or 'field').capitalize()}:{mut_cat}",
                             mutation_name=mut_name,
                             description=mut_desc,
                             payload=mutated_payload,

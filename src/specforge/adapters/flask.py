@@ -1,9 +1,14 @@
 """Flask adapter for SpecForge interactive documentation and contract testing."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 try:
-    from flask import Blueprint, Flask, Response, current_app, jsonify, render_template_string, request
+    from flask import (
+        Blueprint,
+        Flask,
+        Response,
+        jsonify,
+    )
 except ImportError:
     Flask = None  # type: ignore
 
@@ -24,7 +29,7 @@ class SpecForge:
         title: str = "SpecForge API Studio",
         theme: str = "dark",
         enable_tests: bool = True,
-        spec_dict: Optional[Dict[str, Any]] = None,
+        spec_dict: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ):
         if Flask is None:

@@ -1,7 +1,6 @@
 """Pytest code generator for SpecForge test plans."""
 
 import json
-from typing import List
 
 from specforge.testing.invariants import TestCase
 
@@ -12,12 +11,12 @@ class PytestExporter:
     @classmethod
     def export(
         cls,
-        test_cases: List[TestCase],
+        test_cases: list[TestCase],
         base_url: str = "http://localhost:8000",
         module_name: str = "test_api_contracts.py",
     ) -> str:
         """Generate clean, formatted pytest code."""
-        cases_repr: List[str] = []
+        cases_repr: list[str] = []
 
         for tc in test_cases:
             payload_json = json.dumps(tc.payload) if tc.payload is not None else "None"

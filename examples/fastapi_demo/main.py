@@ -1,6 +1,7 @@
 """Demo FastAPI application showcasing SpecForge interactive client and boundary testing."""
 
 from typing import Optional
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 

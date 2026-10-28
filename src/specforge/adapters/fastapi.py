@@ -1,6 +1,6 @@
 """FastAPI adapter for SpecForge interactive documentation and contract testing."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 try:
     from fastapi import FastAPI, Request, Response
@@ -67,7 +67,7 @@ class SpecForge:
         )
         async def specforge_test_plan_endpoint(request: Request) -> Response:
             # Generate or retrieve active OpenAPI specification
-            raw_spec: Dict[str, Any] = self.app.openapi()
+            raw_spec: dict[str, Any] = self.app.openapi()
             parser = OpenAPIParser(raw_spec)
             spec_model = parser.parse()
 
@@ -84,7 +84,7 @@ class SpecForge:
             include_in_schema=False,
         )
         async def specforge_export_pytest_endpoint(request: Request) -> Response:
-            raw_spec: Dict[str, Any] = self.app.openapi()
+            raw_spec: dict[str, Any] = self.app.openapi()
             parser = OpenAPIParser(raw_spec)
             spec_model = parser.parse()
 

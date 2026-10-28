@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from specforge.config import SpecForgeConfig
 
@@ -14,7 +14,7 @@ def get_asset_html_path() -> Path:
 
 def render_html(
     config: SpecForgeConfig,
-    spec_dict: Optional[Dict[str, Any]] = None,
+    spec_dict: Optional[dict[str, Any]] = None,
 ) -> str:
     """Read the inlined HTML template and inject the runtime configuration and spec."""
     asset_path = get_asset_html_path()

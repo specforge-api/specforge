@@ -1,6 +1,6 @@
 """Numeric and integer field boundary test generator."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 from specforge.parser.models import JSONSchema
 
@@ -14,12 +14,12 @@ class NumericFuzzer:
         field_name: str,
         schema: JSONSchema,
         valid_example: float = 10,
-    ) -> List[Tuple[str, str, Any, str]]:
+    ) -> list[tuple[str, str, Any, str]]:
         """Generate a list of mutations for a numeric field.
 
         Returns tuples of: (mutation_name, description, mutated_value, category)
         """
-        mutations: List[Tuple[str, str, Any, str]] = []
+        mutations: list[tuple[str, str, Any, str]] = []
         is_integer = (
             schema.type == "integer"
             or (isinstance(schema.type, list) and "integer" in schema.type)

@@ -6,9 +6,9 @@ and implements live endpoints for testing headers, query parameters, path variab
 """
 
 import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import sys
 import urllib.parse
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 # Configure utf-8 stdout/stderr for Windows console compatibility

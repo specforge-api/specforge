@@ -1,6 +1,6 @@
 """Boolean field mutation test generator."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 from specforge.parser.models import JSONSchema
 
@@ -14,7 +14,7 @@ class BooleanFuzzer:
         field_name: str,
         schema: JSONSchema,
         valid_example: bool = True,
-    ) -> List[Tuple[str, str, Any, str]]:
+    ) -> list[tuple[str, str, Any, str]]:
         """Generate mutations for boolean field."""
         return [
             (

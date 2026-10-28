@@ -1,6 +1,6 @@
 """Array field mutation test generator."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 from specforge.parser.models import JSONSchema
 
@@ -14,9 +14,9 @@ class ArrayFuzzer:
         field_name: str,
         schema: JSONSchema,
         valid_example: Any = None,
-    ) -> List[Tuple[str, str, Any, str]]:
+    ) -> list[tuple[str, str, Any, str]]:
         """Generate mutations for array field."""
-        mutations: List[Tuple[str, str, Any, str]] = []
+        mutations: list[tuple[str, str, Any, str]] = []
 
         # 1. Empty array check when minItems >= 1
         if schema.min_items is not None and schema.min_items > 0:

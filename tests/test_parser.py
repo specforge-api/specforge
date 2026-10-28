@@ -1,9 +1,7 @@
 """Unit tests for OpenAPI 3.x parser and reference resolver."""
 
-import pytest
 from specforge.parser.openapi3 import OpenAPIParser
 from specforge.parser.resolver import RefResolver
-
 
 SAMPLE_OPENAPI_SPEC = {
     "openapi": "3.1.0",

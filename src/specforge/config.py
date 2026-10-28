@@ -1,7 +1,7 @@
 """Configuration models for SpecForge."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal, Optional
 
 
 @dataclass
@@ -18,12 +18,12 @@ class SpecForgeConfig:
     fail_on_leak: bool = True
     max_string_fuzz_length: int = 1000
     timeout_seconds: float = 10.0
-    headers: Dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
     custom_css: Optional[str] = None
     logo_url: Optional[str] = None
     export_pytest: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary for injection into frontend client."""
         return {
             "title": self.title,

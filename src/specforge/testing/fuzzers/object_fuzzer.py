@@ -1,7 +1,7 @@
 """Object schema mutation and required field omission generator."""
 
 import copy
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from specforge.parser.models import JSONSchema
 
@@ -10,9 +10,9 @@ class ObjectFuzzer:
     """Generates mutations for object schemas (request bodies and nested objects)."""
 
     @classmethod
-    def generate_valid_baseline(cls, schema: JSONSchema) -> Dict[str, Any]:
+    def generate_valid_baseline(cls, schema: JSONSchema) -> dict[str, Any]:
         """Generate a valid baseline dictionary conforming to the schema."""
-        baseline: Dict[str, Any] = {}
+        baseline: dict[str, Any] = {}
 
         for prop_name, prop_schema in schema.properties.items():
             if prop_schema.example is not None:
@@ -51,10 +51,10 @@ class ObjectFuzzer:
     def generate_object_mutations(
         cls,
         schema: JSONSchema,
-        baseline_payload: Dict[str, Any],
-    ) -> List[Tuple[str, str, Any, str]]:
+        baseline_payload: dict[str, Any],
+    ) -> list[tuple[str, str, Any, str]]:
         """Generate object-level mutations (omissions, unexpected properties, type inversion)."""
-        mutations: List[Tuple[str, str, Any, str]] = []
+        mutations: list[tuple[str, str, Any, str]] = []
 
         # 1. Combinatorial omission of required fields
         for req_field in schema.required:

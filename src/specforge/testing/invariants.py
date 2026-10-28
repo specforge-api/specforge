@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class TestStatus(str, Enum):
@@ -24,12 +24,12 @@ class TestCase:
     mutation_name: str
     description: str
     payload: Any
-    headers: Dict[str, str] = field(default_factory=dict)
-    query_params: Dict[str, Any] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
+    query_params: dict[str, Any] = field(default_factory=dict)
     expected_status: int = 422
     is_negative_test: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert test case to dictionary for frontend execution or serialization."""
         return {
             "id": self.id,
@@ -59,7 +59,7 @@ class TestResult:
     message: str
     curl_command: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert result to dictionary for frontend inspection."""
         return {
             "test_case": self.test_case.to_dict(),

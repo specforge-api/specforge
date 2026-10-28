@@ -1,6 +1,6 @@
 """OpenAPI 3.x and Swagger 2.0 parser that outputs normalized OpenAPISpec models."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from specforge.parser.models import (
     JSONSchema,
@@ -17,7 +17,7 @@ from specforge.parser.resolver import RefResolver
 class OpenAPIParser:
     """Parses raw OpenAPI dictionaries into structured, dereferenced OpenAPISpec objects."""
 
-    def __init__(self, raw_spec: Dict[str, Any]):
+    def __init__(self, raw_spec: dict[str, Any]):
         self.raw_spec = raw_spec
         self.resolver = RefResolver(raw_spec)
 
@@ -28,7 +28,7 @@ class OpenAPIParser:
         version = info.get("version", "1.0.0")
         description = info.get("description", "")
 
-        servers: List[str] = []
+        servers: list[str] = []
         if "servers" in self.raw_spec and isinstance(self.raw_spec["servers"], list):
             for s in self.raw_spec["servers"]:
                 if isinstance(s, dict) and "url" in s:
@@ -40,7 +40,7 @@ class OpenAPIParser:
             base_path = self.raw_spec.get("basePath", "")
             servers.append(f"{schemes[0]}://{host}{base_path}")
 
-        operations: List[Operation] = []
+        operations: list[Operation] = []
         paths = self.raw_spec.get("paths", {})
 
         for path, path_item in paths.items():
@@ -74,8 +74,8 @@ class OpenAPIParser:
         self,
         path: str,
         method: str,
-        op_data: Dict[str, Any],
-        path_level_params: List[Any],
+        op_data: dict[str, Any],
+        path_level_params: list[Any],
     ) -> Operation:
         """Parse a single operation item."""
         summary = op_data.get("summary")
@@ -85,7 +85,7 @@ class OpenAPIParser:
 
         # Merge path-level and operation-level parameters
         merged_params_raw = list(path_level_params) + op_data.get("parameters", [])
-        parameters: List[Parameter] = []
+        parameters: list[Parameter] = []
 
         for p_raw in merged_params_raw:
             derefed_param = self.resolver.dereference(p_raw)
@@ -139,7 +139,7 @@ class OpenAPIParser:
                 )
 
         # Parse responses
-        responses: Dict[str, ResponseDefinition] = {}
+        responses: dict[str, ResponseDefinition] = {}
         for status_code, resp_raw in op_data.get("responses", {}).items():
             derefed_resp = self.resolver.dereference(resp_raw)
             if not isinstance(derefed_resp, dict):
@@ -214,7 +214,7 @@ class OpenAPIParser:
         unique_items = derefed.get("uniqueItems")
 
         # Object constraints
-        properties: Dict[str, JSONSchema] = {}
+        properties: dict[str, JSONSchema] = {}
         for prop_name, prop_raw in derefed.get("properties", {}).items():
             properties[prop_name] = self._parse_schema(prop_raw)
 
@@ -223,6 +223,7 @@ class OpenAPIParser:
             required = []
 
         additional_properties_raw = derefed.get("additionalProperties", True)
+        additional_properties: bool | JSONSchema
         if isinstance(additional_properties_raw, dict):
             additional_properties = self._parse_schema(additional_properties_raw)
         else:
@@ -231,7 +232,7 @@ class OpenAPIParser:
         nullable = bool(derefed.get("nullable", False))
 
         # Handle allOf merging if present
-        all_of: List[JSONSchema] = []
+        all_of: list[JSONSchema] = []
         if "allOf" in derefed and isinstance(derefed["allOf"], list):
             all_of = [self._parse_schema(item) for item in derefed["allOf"]]
             # Inherit properties from allOf members
@@ -243,11 +244,11 @@ class OpenAPIParser:
                     if req_item not in required:
                         required.append(req_item)
 
-        any_of: List[JSONSchema] = []
+        any_of: list[JSONSchema] = []
         if "anyOf" in derefed and isinstance(derefed["anyOf"], list):
             any_of = [self._parse_schema(item) for item in derefed["anyOf"]]
 
-        one_of: List[JSONSchema] = []
+        one_of: list[JSONSchema] = []
         if "oneOf" in derefed and isinstance(derefed["oneOf"], list):
             one_of = [self._parse_schema(item) for item in derefed["oneOf"]]
 

@@ -1,16 +1,16 @@
 """JSON Pointer & $ref reference resolver with circular reference protection."""
 
-from typing import Any, Dict, Optional, Set
+from typing import Any, Optional
 
 
 class RefResolver:
     """Resolves JSON Reference ($ref) pointers within an OpenAPI specification."""
 
-    def __init__(self, root_spec: Dict[str, Any], max_depth: int = 25):
+    def __init__(self, root_spec: dict[str, Any], max_depth: int = 25):
         self.root_spec = root_spec
         self.max_depth = max_depth
 
-    def resolve_pointer(self, ref: str) -> Dict[str, Any]:
+    def resolve_pointer(self, ref: str) -> dict[str, Any]:
         """Resolve a local JSON Pointer string like '#/components/schemas/User'.
 
         Raises ValueError if the reference cannot be located.
@@ -38,7 +38,7 @@ class RefResolver:
     def dereference(
         self,
         schema: Any,
-        visited_refs: Optional[Set[str]] = None,
+        visited_refs: Optional[set[str]] = None,
         depth: int = 0,
     ) -> Any:
         """Recursively dereferences schemas, protecting against infinite cyclic references."""
@@ -80,7 +80,7 @@ class RefResolver:
             return merged
 
         # Otherwise, recursively dereference dictionary keys
-        result: Dict[str, Any] = {}
+        result: dict[str, Any] = {}
         for key, val in schema.items():
             if key in ("properties", "patternProperties") and isinstance(val, dict):
                 result[key] = {

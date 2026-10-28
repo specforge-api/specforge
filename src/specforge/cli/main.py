@@ -4,9 +4,9 @@ import argparse
 import json
 import sys
 import time
-from pathlib import Path
-from typing import Any, Dict, List, Optional
 import urllib.request
+from pathlib import Path
+from typing import Any
 
 import httpx
 
@@ -16,7 +16,7 @@ from specforge.testing.invariants import TestStatus, evaluate_test_result
 from specforge.testing.planner import TestPlanner
 
 
-def fetch_spec(target: str) -> Dict[str, Any]:
+def fetch_spec(target: str) -> dict[str, Any]:
     """Load OpenAPI JSON/YAML from a local file or remote HTTP URL."""
     if target.startswith("http://") or target.startswith("https://"):
         req = urllib.request.Request(target, headers={"User-Agent": "SpecForge-CLI"})
@@ -67,9 +67,9 @@ def run_test_command(args: argparse.Namespace) -> int:
     fail_count = 0
 
     with httpx.Client(base_url=base_url, timeout=args.timeout) as client:
-        for idx, tc in enumerate(all_test_cases, 1):
+        for _idx, tc in enumerate(all_test_cases, 1):
             start = time.perf_counter()
-            kwargs: Dict[str, Any] = {}
+            kwargs: dict[str, Any] = {}
             if tc.payload is not None:
                 kwargs["json"] = tc.payload
             if tc.query_params:

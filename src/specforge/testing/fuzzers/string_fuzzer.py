@@ -1,6 +1,6 @@
 """String field boundary and negative test generator."""
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from specforge.parser.models import JSONSchema
 
@@ -14,12 +14,12 @@ class StringFuzzer:
         field_name: str,
         schema: JSONSchema,
         valid_example: str = "valid_sample",
-    ) -> List[Tuple[str, str, Any, str]]:
+    ) -> list[tuple[str, str, Any, str]]:
         """Generate a list of mutations for a string field.
 
         Returns tuples of: (mutation_name, description, mutated_value, category)
         """
-        mutations: List[Tuple[str, str, Any, str]] = []
+        mutations: list[tuple[str, str, Any, str]] = []
 
         # 1. Whitespace Fuzzing
         mutations.append((
