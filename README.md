@@ -1,7 +1,8 @@
 # SpecForge ⚡
 
-[![PyPI version](https://img.shields.io/pypi/v/specforge-api.svg)](https://pypi.org/project/specforge-api/)
-[![Python versions](https://img.shields.io/pypi/pyversions/specforge-api.svg)](https://pypi.org/project/specforge-api/)
+[![PyPI version](https://img.shields.io/pypi/v/specforge-api)](https://pypi.org/project/specforge-api/)
+[![Python versions](https://img.shields.io/pypi/pyversions/specforge-api)](https://pypi.org/project/specforge-api/)
+[![CI](https://github.com/specforge-api/specforge/actions/workflows/ci.yml/badge.svg)](https://github.com/specforge-api/specforge/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 **The Interactive API Client & Automated Contract Testing Engine for Python.**
