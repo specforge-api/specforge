@@ -2,6 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/specforge-api)](https://pypi.org/project/specforge-api/)
 [![Python versions](https://img.shields.io/pypi/pyversions/specforge-api)](https://pypi.org/project/specforge-api/)
+[![Documentation](https://img.shields.io/badge/docs-specforge--api.github.io-0f9488)](https://specforge-api.github.io/specforge/)
 [![CI](https://github.com/specforge-api/specforge/actions/workflows/ci.yml/badge.svg)](https://github.com/specforge-api/specforge/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
