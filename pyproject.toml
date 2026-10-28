@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "specforge"
+name = "specforge-api"
 version = "0.1.0"
 description = "The interactive API client and automated contract testing engine for Python."
 readme = "README.md"

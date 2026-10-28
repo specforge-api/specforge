@@ -1,7 +1,7 @@
 # SpecForge ⚡
 
-[![PyPI version](https://img.shields.io/pypi/v/specforge.svg)](https://pypi.org/project/specforge/)
-[![Python versions](https://img.shields.io/pypi/pyversions/specforge.svg)](https://pypi.org/project/specforge/)
+[![PyPI version](https://img.shields.io/pypi/v/specforge-api.svg)](https://pypi.org/project/specforge-api/)
+[![Python versions](https://img.shields.io/pypi/pyversions/specforge-api.svg)](https://pypi.org/project/specforge-api/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 **The Interactive API Client & Automated Contract Testing Engine for Python.**
@@ -22,14 +22,14 @@ A modern, drop-in Python library that replaces Swagger UI with a beautiful, resp
 ## 📦 Installation
 
 ```bash
-pip install specforge
+pip install specforge-api
 ```
 
 With framework extras:
 ```bash
-pip install "specforge[fastapi]"   # FastAPI
-pip install "specforge[flask]"     # Flask
-pip install "specforge[all]"       # Full CLI & all framework adapters
+pip install "specforge-api[fastapi]"   # FastAPI
+pip install "specforge-api[flask]"     # Flask
+pip install "specforge-api[all]"       # Full CLI & all framework adapters
 ```
 
 ---
