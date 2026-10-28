@@ -58,13 +58,18 @@ dev = [
     "mypy>=1.5.0",
     "types-pyyaml",
 ]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "pymdown-extensions>=10.7",
+]
 
 [project.scripts]
 specforge = "specforge.cli.main:cli_entrypoint"
 
 [project.urls]
 Homepage = "https://github.com/specforge-api/specforge"
-Documentation = "https://github.com/specforge-api/specforge#readme"
+Documentation = "https://specforge-api.github.io/specforge/"
 Repository = "https://github.com/specforge-api/specforge"
 Issues = "https://github.com/specforge-api/specforge/issues"
 

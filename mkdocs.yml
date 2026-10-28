@@ -1,0 +1,70 @@
+site_name: SpecForge
+site_description: The Interactive API Client & Automated Contract Testing Engine for Python
+site_author: SpecForge Team
+site_url: https://specforge-api.github.io/specforge/
+repo_name: specforge-api/specforge
+repo_url: https://github.com/specforge-api/specforge
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  palette:
+    # Palette toggle for light mode (Emerald Teal)
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode (Midnight Slate)
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Overview: index.md
+  - Quickstart: quickstart.md
+  - Framework Guides:
+      - FastAPI: frameworks/fastapi.md
+      - Flask: frameworks/flask.md
+  - Contract Testing:
+      - Schema Boundary Fuzzing: testing/fuzzing.md
+      - Pytest Exporter: testing/pytest-export.md
+  - Existing Project Tests:
+      - Test Discovery & Route Linking: project-tests/integration.md
+  - CLI Reference: cli.md
+  - Configuration: configuration.md
