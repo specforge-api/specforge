@@ -1,6 +1,8 @@
 """OpenAPI 3.x and Swagger 2.0 parser that outputs normalized OpenAPISpec models."""
 
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 from specforge.parser.models import (
     JSONSchema,
@@ -113,7 +115,7 @@ class OpenAPIParser:
             )
 
         # Parse request body (OpenAPI 3.x)
-        request_body: Optional[RequestBody] = None
+        request_body: RequestBody | None = None
         if "requestBody" in op_data:
             rb_raw = self.resolver.dereference(op_data["requestBody"])
             if isinstance(rb_raw, dict):
