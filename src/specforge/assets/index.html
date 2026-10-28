@@ -1522,8 +1522,8 @@
         }
         parseOperations();
         renderEndpointList();
+        await synthesizeTestPlan();
         selectOperation(0);
-        synthesizeTestPlan();
       } catch (err) {
         console.error("Failed to load OpenAPI spec:", err);
       }
@@ -1916,6 +1916,38 @@
       document.getElementById("request-body-input").value = JSON.stringify(baseline, null, 2);
     }
 
+    function resolveRef(schema, visited = new Set()) {
+      if (!schema || typeof schema !== 'object') return schema;
+      if (schema.$ref && typeof schema.$ref === 'string') {
+        if (visited.has(schema.$ref)) return schema;
+        visited.add(schema.$ref);
+        const refPath = schema.$ref.replace(/^#\//, '').split('/');
+        let target = activeSpec;
+        for (const seg of refPath) {
+          if (!target) break;
+          target = target[seg];
+        }
+        if (target) {
+          const resolvedTarget = resolveRef(target, visited);
+          return { ...resolvedTarget, ...schema, $ref: undefined };
+        }
+      }
+      if (Array.isArray(schema.allOf)) {
+        let merged = {};
+        for (const sub of schema.allOf) {
+          const resolvedSub = resolveRef(sub, visited);
+          merged = {
+            ...merged,
+            ...resolvedSub,
+            properties: { ...(merged.properties || {}), ...(resolvedSub.properties || {}) },
+            required: [...(merged.required || []), ...(resolvedSub.required || [])]
+          };
+        }
+        return { ...merged, ...schema, allOf: undefined };
+      }
+      return schema;
+    }
+
     function generateMockFromOp(op) {
       const schema = op.raw?.requestBody?.content?.['application/json']?.schema;
       if (!schema) return { message: "sample_payload" };
@@ -1923,7 +1955,11 @@
     }
 
     function generateMockFromSchema(schema) {
-      if (schema.example) return schema.example;
+      if (!schema) return "value";
+      schema = resolveRef(schema);
+      if (schema.example !== undefined) return schema.example;
+      if (schema.default !== undefined) return schema.default;
+      if (schema.enum && schema.enum.length > 0) return schema.enum[0];
       if (schema.type === 'object' || schema.properties) {
         const obj = {};
         for (const [k, v] of Object.entries(schema.properties || {})) {
@@ -1933,11 +1969,19 @@
       }
       if (schema.type === 'string') {
         if (schema.format === 'email') return "user@example.com";
+        if (schema.format === 'uuid') return "123e4567-e89b-12d3-a456-426614174000";
+        if (schema.format === 'date-time') return new Date().toISOString();
+        if (schema.format === 'date') return "2026-10-28";
         return "sample_string";
       }
-      if (schema.type === 'integer' || schema.type === 'number') return schema.minimum || 25;
+      if (schema.type === 'integer' || schema.type === 'number') return schema.minimum !== undefined ? schema.minimum : 25;
       if (schema.type === 'boolean') return true;
-      if (schema.type === 'array') return [];
+      if (schema.type === 'array') {
+        if (schema.items) {
+          return [generateMockFromSchema(schema.items)];
+        }
+        return [];
+      }
       return "value";
     }
 
@@ -2013,10 +2057,47 @@
     }
 
     // Fuzzing & Testing Generator
-    function synthesizeTestPlan() {
+    async function synthesizeTestPlan() {
+      // 1. Try to fetch rich server-synthesized test plan if available
+      try {
+        const res = await fetch("/specforge/api/plan");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.plans && data.plans.length > 0) {
+            testCases = [];
+            data.plans.forEach(plan => {
+              (plan.test_cases || []).forEach(tc => {
+                testCases.push({
+                  opMethod: plan.method.toLowerCase(),
+                  opPath: plan.endpoint,
+                  endpoint: plan.endpoint,
+                  method: plan.method.toUpperCase(),
+                  field: tc.field_name || tc.target_field || "payload",
+                  category: tc.invariant_type || tc.category || "Boundary",
+                  desc: tc.description || tc.name,
+                  payload: tc.payload,
+                  headers: tc.headers || {},
+                  queryParams: tc.query_params || {},
+                  expected: tc.expected_status || 422,
+                  isNegative: tc.is_negative_test !== false
+                });
+              });
+            });
+            mergeCustomProbesFromStorage();
+            populateTestScopeDropdown();
+            renderEndpointPlannedTests();
+            renderPlannedTestTable();
+            return;
+          }
+        }
+      } catch (e) {
+        // Fall back to client-side synthesis
+      }
+
       testCases = [];
       operations.forEach(op => {
-        const schema = op.raw?.requestBody?.content?.['application/json']?.schema;
+        const rawSchema = op.raw?.requestBody?.content?.['application/json']?.schema;
+        const schema = resolveRef(rawSchema);
         const rawParams = op.raw?.parameters || [];
         const opMethod = op.method.toLowerCase();
         const opPath = op.path;
@@ -2025,7 +2106,8 @@
         if (schema && schema.properties) {
           const baseline = generateMockFromSchema(schema);
 
-          for (const [propName, propSchema] of Object.entries(schema.properties)) {
+          for (const [propName, rawPropSchema] of Object.entries(schema.properties)) {
+            const propSchema = resolveRef(rawPropSchema);
             if (propSchema.type === 'string') {
               testCases.push({
                 opMethod,
@@ -2720,6 +2802,8 @@
       const tbody = document.getElementById("test-table-body");
       const activeCases = getActiveTestCases();
       window.__activeTestCases = activeCases;
+      const statTotalEl = document.getElementById("stat-total");
+      if (statTotalEl) statTotalEl.textContent = activeCases.length;
       tbody.innerHTML = "";
 
       if (activeCases.length === 0) {
