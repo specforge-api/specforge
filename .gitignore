@@ -38,3 +38,11 @@ pnpm-debug.log*
 *.swo
 .DS_Store
 Thumbs.db
+
+# Environment & Secrets (SEC-008)
+.env
+.env.*
+*.env
+*.key
+*.pem
+secrets/

@@ -1,7 +1,5 @@
 """Pytest code generator for SpecForge test plans."""
 
-import json
-
 from specforge.testing.invariants import TestCase
 
 
@@ -19,19 +17,18 @@ class PytestExporter:
         cases_repr: list[str] = []
 
         for tc in test_cases:
-            payload_json = json.dumps(tc.payload) if tc.payload is not None else "None"
-            query_json = json.dumps(tc.query_params) if tc.query_params else "None"
-            desc_escaped = tc.description.replace('"', '\\"')
+            payload_repr = repr(tc.payload)
+            query_repr = repr(tc.query_params)
 
             case_str = (
                 f'    (\n'
-                f'        "{tc.endpoint}",\n'
-                f'        "{tc.method.upper()}",\n'
-                f'        {payload_json},\n'
-                f'        {query_json},\n'
+                f'        {repr(tc.endpoint)},\n'
+                f'        {repr(tc.method.upper())},\n'
+                f'        {payload_repr},\n'
+                f'        {query_repr},\n'
                 f'        {tc.expected_status},\n'
                 f'        {tc.is_negative_test},\n'
-                f'        "{desc_escaped}",\n'
+                f'        {repr(tc.description)},\n'
                 f'    ),'
             )
             cases_repr.append(case_str)
@@ -43,7 +40,7 @@ class PytestExporter:
 import pytest
 import httpx
 
-BASE_URL = "{base_url}"
+BASE_URL = {repr(base_url)}
 
 @pytest.mark.parametrize(
     "endpoint,method,payload,query_params,expected_status,is_negative,description",

@@ -50,7 +50,7 @@ SpecForge(
 
 In sensitive production environments, you can easily:
 - Restrict SpecForge to development environments.
-- Protect the `/docs` route with FastAPI dependencies (e.g. API keys or OAuth2):
+- Protect the documentation and test plan routes with FastAPI dependencies (e.g. API keys or OAuth2):
 
 ```python
 import os
@@ -62,15 +62,27 @@ app = FastAPI()
 security = HTTPBasic()
 
 def verify_docs_admin(credentials: HTTPBasicCredentials = Depends(security)):
-    if credentials.username != "admin" or credentials.password != "secret":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    expected_user = os.getenv("DOCS_ADMIN_USER", "admin")
+    expected_pass = os.getenv("DOCS_ADMIN_PASSWORD")
+    if not expected_pass or credentials.username != expected_user or credentials.password != expected_pass:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
-if os.getenv("ENVIRONMENT") == "development":
-    # Mount without auth in dev
+env = os.getenv("ENVIRONMENT", "development")
+
+if env == "development":
+    # Mount without authentication in dev
     SpecForge(app)
+elif env == "staging":
+    # Mount with dependency protection and disabled raw fuzzing endpoints
+    SpecForge(
+        app,
+        dependencies=[Depends(verify_docs_admin)],
+        enable_api_endpoints=False,  # Disable /specforge/api/plan and /export-pytest
+    )
 else:
-    # Mount with dependency protection in staging/prod
-    # (Or omit to disable docs entirely in production)
-    SpecForge(app)
+    # Disable docs entirely in production
+    pass
 ```
-

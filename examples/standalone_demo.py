@@ -160,7 +160,7 @@ SAMPLE_SPEC = {
                         "required": True,
                         "description": "Bearer token authentication (e.g. Bearer my_secret_token)",
                         "schema": {"type": "string"},
-                        "example": "Bearer my_secret_token_123"
+                        "example": "Bearer <your-token-here>"
                     }
                 ],
                 "responses": {

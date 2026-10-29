@@ -1,9 +1,12 @@
 """Command-line interface for SpecForge."""
 
 import argparse
+import ipaddress
 import json
+import socket
 import sys
 import time
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -15,17 +18,82 @@ from specforge.testing.exporters.pytest_export import PytestExporter
 from specforge.testing.invariants import TestStatus, evaluate_test_result
 from specforge.testing.planner import TestPlanner
 
+MAX_SPEC_SIZE = 10 * 1024 * 1024  # 10 MB maximum specification size
+DEFAULT_FETCH_TIMEOUT = 30.0  # seconds
+
+# Blocked metadata and link-local networks to mitigate cloud metadata SSRF
+BLOCKED_IP_NETWORKS = (
+    ipaddress.ip_network("169.254.0.0/16"),   # IPv4 Link-local / Cloud metadata (AWS, GCP, Azure, DigitalOcean)
+    ipaddress.ip_network("fd00:ec2::/64"),    # AWS IMDSv6
+    ipaddress.ip_network("fe80::/10"),        # IPv6 Link-local
+    ipaddress.ip_network("224.0.0.0/4"),      # Multicast
+    ipaddress.ip_network("ff00::/8"),         # IPv6 Multicast
+)
+
+
+def _validate_spec_url(url: str) -> None:
+    """Validate that a URL uses supported schemes and does not target cloud metadata endpoints."""
+    parsed = urllib.parse.urlparse(url)
+    scheme = parsed.scheme.lower()
+    if scheme not in ("http", "https"):
+        raise ValueError(f"Unsupported URL scheme: {scheme!r}. Only 'http' and 'https' are allowed.")
+
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError(f"Invalid URL: missing hostname in {url!r}")
+
+    # Check if the hostname itself is an IP or resolves to blocked ranges
+    try:
+        ip = ipaddress.ip_address(hostname)
+        for net in BLOCKED_IP_NETWORKS:
+            if ip in net:
+                raise ValueError(f"Access to link-local/cloud metadata address {ip} is blocked for security.")
+    except ValueError as e:
+        if "blocked for security" in str(e):
+            raise
+        # Hostname is a domain name, attempt address lookup
+        try:
+            addr_info = socket.getaddrinfo(hostname, None)
+            for res in addr_info:
+                ip = ipaddress.ip_address(res[4][0])
+                for net in BLOCKED_IP_NETWORKS:
+                    if ip in net:
+                        raise ValueError(f"URL resolves to blocked link-local/cloud metadata address: {ip}")
+        except socket.gaierror:
+            # DNS resolution errors will be raised cleanly by urlopen
+            pass
+
+
+class _RestrictedRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Enforces scheme and SSRF validation on redirects."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _validate_spec_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
 
 def fetch_spec(target: str) -> dict[str, Any]:
     """Load OpenAPI JSON/YAML from a local file or remote HTTP URL."""
-    if target.startswith("http://") or target.startswith("https://"):
+    target_lower = target.lower()
+    if target_lower.startswith(("http://", "https://")):
+        _validate_spec_url(target)
+        opener = urllib.request.build_opener(_RestrictedRedirectHandler)
         req = urllib.request.Request(target, headers={"User-Agent": "SpecForge-CLI"})
-        with urllib.request.urlopen(req) as response:
-            content = response.read().decode("utf-8")
+        with opener.open(req, timeout=DEFAULT_FETCH_TIMEOUT) as response:
+            raw_bytes = response.read(MAX_SPEC_SIZE + 1)
+            if len(raw_bytes) > MAX_SPEC_SIZE:
+                raise ValueError(f"Remote specification exceeds maximum allowed size ({MAX_SPEC_SIZE // (1024 * 1024)} MB).")
+            content = raw_bytes.decode("utf-8")
+    elif "://" in target:
+        scheme = target.split("://", 1)[0]
+        raise ValueError(f"Unsupported URL scheme: {scheme!r}. Only 'http' and 'https' are allowed.")
     else:
+        # Treat as local filesystem path
         path = Path(target)
         if not path.exists():
             raise FileNotFoundError(f"Spec file not found at: {target}")
+        if path.stat().st_size > MAX_SPEC_SIZE:
+            raise ValueError(f"Local specification file exceeds maximum allowed size ({MAX_SPEC_SIZE // (1024 * 1024)} MB).")
         content = path.read_text(encoding="utf-8")
 
     try:
@@ -117,6 +185,9 @@ def run_test_command(args: argparse.Namespace) -> int:
     # Export to pytest if requested
     if args.export_pytest:
         out_path = Path(args.export_pytest)
+        if out_path.exists() and out_path.is_dir():
+            print(f"\n\033[1;31mError: Export path is a directory: {out_path}\033[0m")
+            return 1
         code = PytestExporter.export(all_test_cases, base_url=base_url)
         out_path.write_text(code, encoding="utf-8")
         print(f"\n🐍 \033[32mExported Pytest suite to: {out_path.resolve()}\033[0m")

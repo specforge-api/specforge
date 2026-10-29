@@ -3,7 +3,7 @@
 from typing import Any, Optional
 
 try:
-    from flask import (
+    from flask import (  # type: ignore
         Blueprint,
         Flask,
         Response,
@@ -29,6 +29,7 @@ class SpecForge:
         title: str = "SpecForge API Studio",
         theme: str = "dark",
         enable_tests: bool = True,
+        enable_api_endpoints: bool = True,
         spec_dict: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ):
@@ -46,6 +47,7 @@ class SpecForge:
             spec_url=spec_url,
             theme=theme,  # type: ignore
             enable_tests=enable_tests,
+            enable_api_endpoints=enable_api_endpoints,
             **kwargs,
         )
 
@@ -60,19 +62,20 @@ class SpecForge:
             html = render_html(self.config, self.spec_dict)
             return Response(html, mimetype="text/html")
 
-        @bp.route("/specforge/api/plan", methods=["GET"])
-        def specforge_plan() -> Any:
-            if not self.spec_dict:
-                return jsonify({"error": "SpecForge Flask adapter requires spec_dict for test planning."}), 400
+        if self.config.enable_api_endpoints:
+            @bp.route("/specforge/api/plan", methods=["GET"])
+            def specforge_plan() -> Any:
+                if not self.spec_dict:
+                    return jsonify({"error": "SpecForge Flask adapter requires spec_dict for test planning."}), 400
 
-            parser = OpenAPIParser(self.spec_dict)
-            spec_model = parser.parse()
+                parser = OpenAPIParser(self.spec_dict)
+                spec_model = parser.parse()
 
-            plans = []
-            for op in spec_model.operations:
-                plan = TestPlanner.plan_operation_tests(op)
-                plans.append(plan.to_dict())
+                plans = []
+                for op in spec_model.operations:
+                    plan = TestPlanner.plan_operation_tests(op)
+                    plans.append(plan.to_dict())
 
-            return jsonify({"plans": plans})
+                return jsonify({"plans": plans})
 
         self.app.register_blueprint(bp)

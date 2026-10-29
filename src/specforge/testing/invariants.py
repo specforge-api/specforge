@@ -1,5 +1,7 @@
 """Test invariants, status evaluations, and result data structures."""
 
+import json
+import shlex
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -153,18 +155,16 @@ def evaluate_test_result(
 
 
 def build_curl_command(test_case: TestCase, base_url: str = "http://localhost:8000") -> str:
-    """Generate a clean cURL reproduction command for a test case."""
-    import json
-
+    """Generate a clean, shell-escaped cURL reproduction command for a test case."""
     url = f"{base_url.rstrip('/')}{test_case.endpoint}"
-    cmd_parts = [f"curl -X {test_case.method.upper()} '{url}'"]
+    cmd_parts = [f"curl -X {shlex.quote(test_case.method.upper())} {shlex.quote(url)}"]
 
     for h_name, h_val in test_case.headers.items():
-        cmd_parts.append(f"-H '{h_name}: {h_val}'")
+        cmd_parts.append(f"-H {shlex.quote(f'{h_name}: {h_val}')}")
 
     if test_case.payload is not None:
         cmd_parts.append("-H 'Content-Type: application/json'")
-        payload_str = json.dumps(test_case.payload).replace("'", "'\\''")
-        cmd_parts.append(f"-d '{payload_str}'")
+        payload_str = json.dumps(test_case.payload)
+        cmd_parts.append(f"-d {shlex.quote(payload_str)}")
 
     return " \\\n  ".join(cmd_parts)

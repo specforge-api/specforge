@@ -5,9 +5,33 @@ on:
     tags:
       - "v*.*.*"
 
+permissions:
+  contents: read
+
 jobs:
+  lint-and-test:
+    name: Run Test Suite Before Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[all,dev]"
+
+      - name: Run Pytest
+        run: pytest
+
   pypi-publish:
     name: Build package and publish to PyPI
+    needs: [lint-and-test]
     runs-on: ubuntu-latest
     permissions:
       id-token: write  # Mandatory for PyPI Trusted Publishing (OIDC)
@@ -15,10 +39,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
         with:
           python-version: "3.11"
 
@@ -31,4 +55,4 @@ jobs:
         run: python -m build
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@f553642738fe5fdee2fba96d20d9b44e06bddc99  # release/v1

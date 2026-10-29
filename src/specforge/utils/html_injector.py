@@ -12,6 +12,20 @@ def get_asset_html_path() -> Path:
     return Path(__file__).parent.parent / "assets" / "index.html"
 
 
+def _html_safe_json(data: Any) -> str:
+    """Serialize data to JSON safe for embedding in HTML <script> tags.
+
+    Prevents </script> breakout and HTML comment injection by escaping
+    sensitive characters using standard Unicode JSON escape sequences.
+    """
+    return (
+        json.dumps(data)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+
+
 def render_html(
     config: SpecForgeConfig,
     spec_dict: Optional[dict[str, Any]] = None,
@@ -31,7 +45,7 @@ def render_html(
     if spec_dict is not None:
         config_data["embedded_spec"] = spec_dict
 
-    config_json = json.dumps(config_data)
+    config_json = _html_safe_json(config_data)
     replacement = f"<script>window.__SPECFORGE_CONFIG__ = {config_json};</script>"
 
     # Replace placeholder or insert into <head>

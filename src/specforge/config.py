@@ -22,6 +22,7 @@ class SpecForgeConfig:
     custom_css: Optional[str] = None
     logo_url: Optional[str] = None
     export_pytest: bool = True
+    enable_api_endpoints: bool = True
 
     def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary for injection into frontend client."""
@@ -39,4 +40,5 @@ class SpecForgeConfig:
             "headers": self.headers,
             "logo_url": self.logo_url,
             "export_pytest": self.export_pytest,
+            "enable_api_endpoints": self.enable_api_endpoints,
         }
