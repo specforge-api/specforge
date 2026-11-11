@@ -34,6 +34,24 @@ class TestPlan:
         }
 
 
+_RESILIENCE_MUTATIONS = frozenset({
+    "Unicode: 4-Byte Emojis",
+    "Buffer: Large String (5000 chars)",
+    "Security: Basic SQL Injection Probe",
+    "Security: XSS Script Tag Probe",
+})
+
+
+def _is_resilience_mutation(mutation_name: str, schema: Any) -> bool:
+    """Return True for safety/resilience probes where 2xx or 400/422 are both acceptable (only 500 fails)."""
+    if mutation_name in _RESILIENCE_MUTATIONS:
+        return not getattr(schema, "pattern", None)
+    if mutation_name == "Overflow: 32-bit Integer Limit":
+        max_val = getattr(schema, "maximum", None)
+        return max_val is None or max_val >= 2147483648
+    return False
+
+
 class TestPlanner:
     """Assembles combinatorial test cases by coordinating type fuzzers."""
 
@@ -102,6 +120,7 @@ class TestPlanner:
                 for mut_name, mut_desc, mut_val, mut_cat in field_mutations:
                     mutated_payload = copy.deepcopy(baseline)
                     mutated_payload[prop_name] = mut_val
+                    allow_accepted = _is_resilience_mutation(mut_name, prop_schema)
 
                     test_cases.append(
                         TestCase(
@@ -115,6 +134,7 @@ class TestPlanner:
                             payload=mutated_payload,
                             expected_status=422,
                             is_negative_test=True,
+                            allow_accepted=allow_accepted,
                         )
                     )
 
@@ -128,9 +148,20 @@ class TestPlanner:
                 if param_type == "string":
                     param_mutations = StringFuzzer.generate_mutations(param_name, param.schema)
                 elif param_type in ("integer", "number"):
-                    param_mutations = NumericFuzzer.generate_mutations(param_name, param.schema)
+                    param_mutations = [
+                        (
+                            "Type: Non-Numeric String",
+                            f"Reject non-numeric string 'not_a_number' for numeric field '{param_name}'",
+                            "not_a_number",
+                            "Type",
+                        )
+                        if m[0] == "Type: String Instead of Number"
+                        else m
+                        for m in NumericFuzzer.generate_mutations(param_name, param.schema)
+                    ]
 
                 for mut_name, mut_desc, mut_val, mut_cat in param_mutations:
+                    allow_accepted = _is_resilience_mutation(mut_name, param.schema)
                     test_cases.append(
                         TestCase(
                             id=str(uuid.uuid4())[:8],
@@ -144,6 +175,7 @@ class TestPlanner:
                             query_params={param_name: mut_val},
                             expected_status=422,
                             is_negative_test=True,
+                            allow_accepted=allow_accepted,
                         )
                     )
 

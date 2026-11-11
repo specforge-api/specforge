@@ -19,6 +19,7 @@ from specforge.testing.invariants import TestStatus, evaluate_test_result
 from specforge.testing.planner import TestPlanner
 
 MAX_SPEC_SIZE = 10 * 1024 * 1024  # 10 MB maximum specification size
+MAX_RESPONSE_BODY_PREVIEW = 100_000  # 100 KB response preview limit in CLI
 DEFAULT_FETCH_TIMEOUT = 30.0  # seconds
 
 # Blocked metadata and link-local networks to mitigate cloud metadata SSRF
@@ -129,6 +130,12 @@ def run_test_command(args: argparse.Namespace) -> int:
     base_url = args.base_url or (spec_model.servers[0] if spec_model.servers else "http://localhost:8000")
     base_url = base_url.rstrip("/")
 
+    try:
+        _validate_spec_url(base_url)
+    except ValueError as e:
+        print(f"\033[1;31mError validating base URL: {e}\033[0m")
+        return 1
+
     pass_count = 0
     leak_count = 0
     crash_count = 0
@@ -138,15 +145,17 @@ def run_test_command(args: argparse.Namespace) -> int:
         for _idx, tc in enumerate(all_test_cases, 1):
             start = time.perf_counter()
             kwargs: dict[str, Any] = {}
-            if tc.payload is not None:
+            if tc.payload is not None and tc.method.upper() not in ("GET", "HEAD"):
                 kwargs["json"] = tc.payload
             if tc.query_params:
                 kwargs["params"] = tc.query_params
+            if tc.headers:
+                kwargs["headers"] = tc.headers
 
             try:
                 res = client.request(tc.method.upper(), tc.endpoint, **kwargs)
                 actual_status = res.status_code
-                resp_text = res.text
+                resp_text = res.text[:MAX_RESPONSE_BODY_PREVIEW]
             except Exception as e:
                 actual_status = 599
                 resp_text = str(e)
@@ -185,6 +194,9 @@ def run_test_command(args: argparse.Namespace) -> int:
     # Export to pytest if requested
     if args.export_pytest:
         out_path = Path(args.export_pytest)
+        if out_path.is_symlink():
+            print(f"\n\033[1;31mError: Refusing to overwrite symlink export path: {out_path}\033[0m")
+            return 1
         if out_path.exists() and out_path.is_dir():
             print(f"\n\033[1;31mError: Export path is a directory: {out_path}\033[0m")
             return 1

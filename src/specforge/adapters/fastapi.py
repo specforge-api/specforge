@@ -15,6 +15,12 @@ from specforge.testing.exporters.pytest_export import PytestExporter
 from specforge.testing.planner import TestPlanner
 from specforge.utils.html_injector import render_html
 
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "no-referrer",
+}
+
 
 class SpecForge:
     """Mounts the SpecForge interactive client and boundary test suite onto a FastAPI application."""
@@ -27,7 +33,7 @@ class SpecForge:
         spec_url: Optional[str] = None,
         theme: str = "dark",
         enable_tests: bool = True,
-        disable_default_docs: bool = False,
+        disable_default_docs: bool = True,
         enable_api_endpoints: bool = True,
         dependencies: Optional[Sequence[Any]] = None,
         api_dependencies: Optional[Sequence[Any]] = None,
@@ -54,10 +60,36 @@ class SpecForge:
             **kwargs,
         )
 
-        if disable_default_docs and hasattr(app, "docs_url"):
-            app.docs_url = None
+        if disable_default_docs:
+            self._remove_conflicting_docs_routes()
 
         self._register_routes()
+
+    def _remove_conflicting_docs_routes(self) -> None:
+        """Remove FastAPI's pre-registered docs routes that conflict with SpecForge."""
+        default_docs_url = getattr(self.app, "docs_url", None)
+        if default_docs_url:
+            self.app.docs_url = None
+        if getattr(self.app, "redoc_url", None) == self.path:
+            self.app.redoc_url = None
+
+        router = getattr(self.app, "router", None)
+        if router is not None and hasattr(router, "routes"):
+            router.routes = [
+                route
+                for route in router.routes
+                if not (
+                    "GET" in (getattr(route, "methods", None) or set())
+                    and (
+                        getattr(route, "path", None) == self.path
+                        or (
+                            default_docs_url is not None
+                            and getattr(route, "path", None) == default_docs_url
+                            and getattr(route, "name", None) in ("swagger_ui_html", "swagger_ui_redirect")
+                        )
+                    )
+                )
+            ]
 
     def _register_routes(self) -> None:
         """Register the documentation UI and test plan endpoints on the FastAPI app."""
@@ -70,7 +102,7 @@ class SpecForge:
         )
         async def specforge_docs_endpoint(request: Request) -> Response:
             html = render_html(self.config)
-            return HTMLResponse(content=html)
+            return HTMLResponse(content=html, headers=_SECURITY_HEADERS)
 
         if self.config.enable_api_endpoints:
             @self.app.get(

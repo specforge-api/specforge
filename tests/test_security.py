@@ -170,3 +170,79 @@ def test_config_enable_api_endpoints_default():
     custom_config = SpecForgeConfig(enable_api_endpoints=False)
     assert custom_config.enable_api_endpoints is False
     assert custom_config.to_dict()["enable_api_endpoints"] is False
+
+
+def test_curl_command_redacts_sensitive_headers():
+    """Verify Authorization and API key headers are redacted in cURL output by default."""
+    tc = SpecTestCase(
+        id="test_redact",
+        endpoint="/items",
+        method="get",
+        field_name="headers",
+        mutation_category="Auth",
+        mutation_name="Auth",
+        description="test",
+        payload=None,
+        headers={"Authorization": "Bearer super_secret_token", "X-API-Key": "secret_key"},
+    )
+    curl_redacted = build_curl_command(tc)
+    assert "super_secret_token" not in curl_redacted
+    assert "secret_key" not in curl_redacted
+    assert "<REDACTED>" in curl_redacted
+
+    curl_raw = build_curl_command(tc, redact_secrets=False)
+    assert "super_secret_token" in curl_raw
+
+
+def test_cli_blocks_ssrf_in_base_url(tmp_path):
+    """Verify CLI run_test_command validates --base-url against SSRF/metadata IPs."""
+    import argparse
+
+    from specforge.cli.main import run_test_command
+
+    spec_file = tmp_path / "spec.json"
+    spec_file.write_text('{"openapi":"3.1.0","info":{"title":"T","version":"1.0"},"paths":{}}', encoding="utf-8")
+
+    args = argparse.Namespace(
+        spec=str(spec_file),
+        base_url="http://169.254.169.254/latest/meta-data/",
+        timeout=5.0,
+        fail_on_500=True,
+        export_pytest=None,
+    )
+    assert run_test_command(args) == 1
+
+
+def test_index_html_escapes_dynamic_render_sinks():
+    """Verify bundled UI asset escapes OpenAPI strings in DOM templates and uses safe helpers."""
+    from specforge.utils.html_injector import get_asset_html_path
+
+    html = get_asset_html_path().read_text(encoding="utf-8")
+    assert "${escapeHtml(op.path)}" in html
+    assert "${escapeHtml(p.name)}" in html
+    assert "${escapeHtml(p.value)}" in html
+    assert "${escapeHtml(q.key)}" in html
+    assert "${escapeHtml(h.key)}" in html
+    assert "${escapeHtml(fieldName)}" in html
+    assert "function safeHttpMethod(" in html
+    assert "function toPythonLiteral(" in html
+
+
+def test_fastapi_adapter_replaces_default_docs_and_sets_security_headers():
+    """Verify SpecForge(app) replaces FastAPI's built-in /docs route and sets security headers."""
+    fastapi = pytest.importorskip("fastapi")
+    testclient = pytest.importorskip("fastapi.testclient")
+
+    from specforge import SpecForge
+
+    app = fastapi.FastAPI(title="Default Docs Test")
+    SpecForge(app)
+
+    client = testclient.TestClient(app)
+    res = client.get("/docs")
+    assert res.status_code == 200
+    assert "window.__SPECFORGE_CONFIG__" in res.text
+    assert "SwaggerUIBundle" not in res.text
+    assert res.headers.get("x-content-type-options") == "nosniff"
+    assert res.headers.get("x-frame-options") == "SAMEORIGIN"
+    assert res.headers.get("referrer-policy") == "no-referrer"

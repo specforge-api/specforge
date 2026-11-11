@@ -193,6 +193,8 @@ class OpenAPIParser:
         description = derefed.get("description")
         default = derefed.get("default")
         example = derefed.get("example")
+        if example is None and isinstance(derefed.get("examples"), list) and derefed["examples"]:
+            example = derefed["examples"][0]
         enum = derefed.get("enum")
 
         # String constraints

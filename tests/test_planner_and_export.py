@@ -81,3 +81,47 @@ def test_pytest_exporter_generates_valid_code():
 
     # Verify that the generated code is syntactically valid Python
     compile(code, "<string>", "exec")
+
+
+def test_query_param_numeric_uses_non_numeric_string():
+    """Verify numeric query parameters test non-numeric strings instead of valid numeric strings."""
+    from specforge.parser.models import Parameter, ParameterLocation
+
+    operation = Operation(
+        method="get",
+        path="/items",
+        parameters=[
+            Parameter(
+                name="limit",
+                location=ParameterLocation.QUERY,
+                required=False,
+                schema=JSONSchema(type="integer", minimum=1, maximum=100),
+            )
+        ],
+    )
+    plan = TestPlanner.plan_operation_tests(operation)
+    values = [tc.query_params.get("limit") for tc in plan.test_cases if tc.field_name == "limit"]
+    assert "not_a_number" in values
+    assert "100" not in values
+
+
+def test_resilience_probes_allow_accepted_unless_500():
+    """Verify resilience probes pass on 2xx/4xx and still fail on 500."""
+    from specforge.testing.invariants import TestStatus, evaluate_test_result
+
+    body_schema = JSONSchema(
+        type="object",
+        required=["name"],
+        properties={"name": JSONSchema(type="string")},
+    )
+    operation = Operation(
+        method="post",
+        path="/items",
+        request_body=RequestBody(schema=body_schema),
+    )
+    plan = TestPlanner.plan_operation_tests(operation)
+    emoji_tc = next(tc for tc in plan.test_cases if tc.mutation_name == "Unicode: 4-Byte Emojis")
+    assert emoji_tc.allow_accepted is True
+    assert evaluate_test_result(emoji_tc, 200, "{}", 1.0).status == TestStatus.PASS
+    assert evaluate_test_result(emoji_tc, 422, "{}", 1.0).status == TestStatus.PASS
+    assert evaluate_test_result(emoji_tc, 500, "err", 1.0).status == TestStatus.CRASH_500

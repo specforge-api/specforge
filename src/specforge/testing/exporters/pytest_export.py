@@ -19,6 +19,7 @@ class PytestExporter:
         for tc in test_cases:
             payload_repr = repr(tc.payload)
             query_repr = repr(tc.query_params)
+            headers_repr = repr(tc.headers)
 
             case_str = (
                 f'    (\n'
@@ -26,8 +27,10 @@ class PytestExporter:
                 f'        {repr(tc.method.upper())},\n'
                 f'        {payload_repr},\n'
                 f'        {query_repr},\n'
+                f'        {headers_repr},\n'
                 f'        {tc.expected_status},\n'
                 f'        {tc.is_negative_test},\n'
+                f'        {tc.allow_accepted},\n'
                 f'        {repr(tc.description)},\n'
                 f'    ),'
             )
@@ -43,7 +46,7 @@ import httpx
 BASE_URL = {repr(base_url)}
 
 @pytest.mark.parametrize(
-    "endpoint,method,payload,query_params,expected_status,is_negative,description",
+    "endpoint,method,payload,query_params,headers,expected_status,is_negative,allow_accepted,description",
     [
 {cases_block}
     ]
@@ -53,17 +56,21 @@ def test_specforge_contract_boundaries(
     method: str,
     payload,
     query_params,
+    headers,
     expected_status: int,
     is_negative: bool,
+    allow_accepted: bool,
     description: str,
 ):
     """Execute boundary test and assert Zero-500s invariant and contract validation."""
     with httpx.Client(base_url=BASE_URL, timeout=10.0) as client:
         kwargs = {{}}
-        if payload is not None:
+        if payload is not None and method.upper() not in ("GET", "HEAD"):
             kwargs["json"] = payload
-        if query_params is not None:
+        if query_params:
             kwargs["params"] = query_params
+        if headers:
+            kwargs["headers"] = headers
 
         response = client.request(method, endpoint, **kwargs)
 
@@ -72,8 +79,14 @@ def test_specforge_contract_boundaries(
             f"CRITICAL 500 SERVER CRASH: '{{description}}' triggered an unhandled exception!"
         )
 
-        # Invariant 2: Negative tests must be cleanly rejected with 400 or 422
-        if is_negative:
+        # Invariant 2: Resilience probes allow safe acceptance (2xx) or clean rejection (400/422)
+        if allow_accepted:
+            assert 200 <= response.status_code < 300 or response.status_code in (400, 422), (
+                f"UNEXPECTED STATUS on '{{description}}': got HTTP {{response.status_code}}. "
+                f"Response: {{response.text}}"
+            )
+        elif is_negative:
+            # Invariant 3: Strict negative tests must be cleanly rejected with 400 or 422
             assert response.status_code in (400, 422), (
                 f"SCHEMA LEAK on '{{description}}': expected 400/422 rejection, "
                 f"got HTTP {{response.status_code}}. Response: {{response.text}}"

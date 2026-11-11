@@ -17,6 +17,12 @@ from specforge.parser.openapi3 import OpenAPIParser
 from specforge.testing.planner import TestPlanner
 from specforge.utils.html_injector import render_html
 
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "no-referrer",
+}
+
 
 class SpecForge:
     """Mounts the SpecForge interactive client and boundary test suite onto a Flask application."""
@@ -60,7 +66,7 @@ class SpecForge:
         @bp.route(self.path, methods=["GET"])
         def specforge_docs() -> Any:
             html = render_html(self.config, self.spec_dict)
-            return Response(html, mimetype="text/html")
+            return Response(html, mimetype="text/html", headers=_SECURITY_HEADERS)
 
         if self.config.enable_api_endpoints:
             @bp.route("/specforge/api/plan", methods=["GET"])

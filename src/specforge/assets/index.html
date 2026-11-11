@@ -1550,12 +1550,13 @@
       const container = document.getElementById("endpoint-list");
       container.innerHTML = "";
       operations.forEach((op, index) => {
+        const method = safeHttpMethod(op.method);
         const item = document.createElement("div");
         item.className = `endpoint-item ${index === selectedOpIndex ? 'active' : ''}`;
         item.onclick = () => selectOperation(index);
         item.innerHTML = `
-          <span class="badge-method badge-${op.method}">${op.method}</span>
-          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${op.path}</span>
+          <span class="badge-method badge-${method}">${escapeHtml(method)}</span>
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(op.path)}</span>
         `;
         container.appendChild(item);
       });
@@ -1685,10 +1686,10 @@
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td style="width: 140px; font-weight: 600; font-family: var(--font-mono); font-size: 0.82rem; color: var(--primary);">
-            {${p.name}}
+            {${escapeHtml(p.name)}}
           </td>
           <td>
-            <input type="text" class="kv-input" value="${p.value}" placeholder="Value..." oninput="onPathParamInput(${idx}, this.value)">
+            <input type="text" class="kv-input" value="${escapeHtml(p.value)}" placeholder="Value..." oninput="onPathParamInput(${idx}, this.value)">
           </td>
         `;
         tbody.appendChild(tr);
@@ -1718,10 +1719,10 @@
             <input type="checkbox" ${q.enabled ? 'checked' : ''} onchange="toggleQueryParam(${idx})">
           </td>
           <td>
-            <input type="text" class="kv-input" value="${q.key}" placeholder="Key" oninput="onQueryParamChange(${idx}, 'key', this.value)">
+            <input type="text" class="kv-input" value="${escapeHtml(q.key)}" placeholder="Key" oninput="onQueryParamChange(${idx}, 'key', this.value)">
           </td>
           <td>
-            <input type="text" class="kv-input" value="${q.value}" placeholder="Value" oninput="onQueryParamChange(${idx}, 'value', this.value)">
+            <input type="text" class="kv-input" value="${escapeHtml(q.value)}" placeholder="Value" oninput="onQueryParamChange(${idx}, 'value', this.value)">
           </td>
           <td style="text-align: center;">
             <button class="btn-icon" onclick="removeQueryParamRow(${idx})" title="Remove">✕</button>
@@ -1770,10 +1771,10 @@
             <input type="checkbox" ${h.enabled ? 'checked' : ''} onchange="toggleHeader(${idx})">
           </td>
           <td>
-            <input type="text" class="kv-input" value="${h.key}" placeholder="Header Name" oninput="onHeaderChange(${idx}, 'key', this.value)">
+            <input type="text" class="kv-input" value="${escapeHtml(h.key)}" placeholder="Header Name" oninput="onHeaderChange(${idx}, 'key', this.value)">
           </td>
           <td>
-            <input type="text" class="kv-input" value="${h.value}" placeholder="Value" oninput="onHeaderChange(${idx}, 'value', this.value)">
+            <input type="text" class="kv-input" value="${escapeHtml(h.value)}" placeholder="Value" oninput="onHeaderChange(${idx}, 'value', this.value)">
           </td>
           <td style="text-align: center;">
             <button class="btn-icon" onclick="removeHeaderRow(${idx})" title="Remove">✕</button>
@@ -1958,6 +1959,7 @@
       if (!schema) return "value";
       schema = resolveRef(schema);
       if (schema.example !== undefined) return schema.example;
+      if (Array.isArray(schema.examples) && schema.examples.length > 0) return schema.examples[0];
       if (schema.default !== undefined) return schema.default;
       if (schema.enum && schema.enum.length > 0) return schema.enum[0];
       if (schema.type === 'object' || schema.properties) {
@@ -2016,7 +2018,7 @@
           method: op.method.toUpperCase(),
           headers: headersObj
         };
-        if (payload) opts.body = JSON.stringify(payload);
+        if (payload !== null && payload !== undefined) opts.body = JSON.stringify(payload);
 
         const res = await fetch(resolvedPath, opts);
         const elapsed = Math.round(performance.now() - startTime);
@@ -2073,13 +2075,14 @@
                   endpoint: plan.endpoint,
                   method: plan.method.toUpperCase(),
                   field: tc.field_name || tc.target_field || "payload",
-                  category: tc.invariant_type || tc.category || "Boundary",
-                  desc: tc.description || tc.name,
+                  category: tc.mutation_category || tc.invariant_type || tc.category || "Boundary",
+                  desc: tc.description || tc.mutation_name || tc.name,
                   payload: tc.payload,
                   headers: tc.headers || {},
                   queryParams: tc.query_params || {},
                   expected: tc.expected_status || 422,
-                  isNegative: tc.is_negative_test !== false
+                  isNegative: tc.is_negative_test !== false,
+                  allowAccepted: Boolean(tc.allow_accepted)
                 });
               });
             });
@@ -2248,6 +2251,13 @@
     }
 
     // --- Custom Field Test Probes (Pure Client-Side / LocalStorage) ---
+    const ALLOWED_HTTP_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch', 'options', 'head', 'trace']);
+
+    function safeHttpMethod(method) {
+      const normalized = String(method || 'get').toLowerCase().trim();
+      return ALLOWED_HTTP_METHODS.has(normalized) ? normalized : 'get';
+    }
+
     function escapeHtml(str) {
       if (str === null || str === undefined) return "";
       return String(str)
@@ -2260,7 +2270,27 @@
 
     function escapeJs(str) {
       if (!str) return "";
-      return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+      return String(str)
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "\\r")
+        .replace(/\u2028/g, "\\u2028")
+        .replace(/\u2029/g, "\\u2029");
+    }
+
+    function toPythonLiteral(val) {
+      if (val === null || val === undefined) return "None";
+      if (typeof val === "boolean") return val ? "True" : "False";
+      if (typeof val === "number") return Number.isFinite(val) ? String(val) : "None";
+      if (typeof val === "string") return JSON.stringify(val);
+      if (Array.isArray(val)) return "[" + val.map(toPythonLiteral).join(", ") + "]";
+      if (typeof val === "object") {
+        const entries = Object.entries(val).map(([k, v]) => `${JSON.stringify(k)}: ${toPythonLiteral(v)}`);
+        return "{" + entries.join(", ") + "}";
+      }
+      return "None";
     }
 
     function getCustomProbesFromStorage() {
@@ -2587,7 +2617,7 @@
       const chevron = document.getElementById(`chevron-${safeId}`);
       if (chevron) chevron.classList.remove("collapsed");
 
-      const testBtns = body.querySelectorAll("button[onclick*='runSingleRouteProbe']");
+      const testBtns = body.querySelectorAll(".btn-run-probe");
       for (const btn of testBtns) {
         btn.click();
         await new Promise(r => setTimeout(r, 60));
@@ -2626,7 +2656,7 @@
 
         // Determine location tag
         let locBadge = `<span style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--muted-foreground); background:var(--secondary); border:1px solid var(--border); padding:0.1rem 0.35rem; border-radius:3px;">`;
-        if (fieldName.startsWith('?')) locBadge += `Query`;
+        if (fieldName.startsWith('?') || items.some(it => it.tc.queryParams && Object.keys(it.tc.queryParams).length > 0)) locBadge += `Query`;
         else if (fieldName.startsWith('Header:')) locBadge += `Header`;
         else if (fieldName.startsWith('Path')) locBadge += `Path`;
         else locBadge += `Body`;
@@ -2640,13 +2670,13 @@
           <div class="field-group-header" onclick="toggleFieldGroup('${safeId}')">
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
               ${locBadge}
-              <span class="field-tag">${fieldName}</span>
+              <span class="field-tag">${escapeHtml(fieldName)}</span>
               <span class="sub-tab-badge" style="background: var(--accent); color: var(--accent-foreground); border: 1px solid var(--border); font-size: 0.7rem; font-weight: 600;">
                 ${countText}
               </span>
             </div>
             <div style="display: flex; align-items: center; gap: 0.4rem;">
-              <button class="btn btn-outline" style="font-size: 0.68rem; padding: 0.16rem 0.45rem;" onclick="event.stopPropagation(); openAddCustomTestModal('${escapeJs(fieldName)}')" title="Add custom probe for this field">
+              <button class="btn btn-outline btn-add-custom-probe" style="font-size: 0.68rem; padding: 0.16rem 0.45rem;" title="Add custom probe for this field">
                 + Add Test
               </button>
               <button class="btn btn-outline-primary" style="font-size: 0.7rem; padding: 0.18rem 0.5rem;" onclick="event.stopPropagation(); runFieldGroupProbes('${safeId}')" title="Run all tests for this field">
@@ -2659,17 +2689,29 @@
           </div>
         `;
 
+        const addCustomBtn = groupCard.querySelector(".btn-add-custom-probe");
+        if (addCustomBtn) {
+          addCustomBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openAddCustomTestModal(fieldName);
+          });
+        }
+
         const bodyEl = groupCard.querySelector(`#body-${safeId}`);
 
         items.forEach(({ tc, globalIndex }) => {
           let valPreview = "";
-          if (tc.payload && typeof tc.payload === 'object') {
+          if (tc.queryParams && Object.keys(tc.queryParams).length > 0) {
+            valPreview = JSON.stringify(tc.queryParams);
+          } else if (tc.payload !== null && tc.payload !== undefined && typeof tc.payload === 'object' && tc.field !== '[body_root]') {
             const targetVal = tc.payload[tc.field];
             if (targetVal !== undefined) {
               valPreview = JSON.stringify(targetVal);
             } else {
               valPreview = `(Field omitted)`;
             }
+          } else if (tc.payload !== null && tc.payload !== undefined) {
+            valPreview = JSON.stringify(tc.payload);
           } else if (tc.field.startsWith('?')) {
             const qVal = tc.endpoint.split('?')[1] || '';
             valPreview = decodeURIComponent(qVal);
@@ -2693,24 +2735,92 @@
               </div>
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;">
-              <span style="font-size: 0.74rem; color: var(--muted-foreground);">Expected: <strong style="color: var(--foreground);">${tc.expected}</strong></span>
+              <span style="font-size: 0.74rem; color: var(--muted-foreground);">Expected: <strong style="color: var(--foreground);">${tc.allowAccepted ? '2xx / 4xx (No 500)' : escapeHtml(tc.expected)}</strong></span>
               <div id="route-probe-res-${globalIndex}"><span class="pill pill-planned">READY</span></div>
             </div>
-            <div style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center;">
-              <button class="btn btn-outline-primary" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="runSingleRouteProbe(${globalIndex}, 'route-probe-res-${globalIndex}')">
+            <div class="probe-actions" style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center;">
+              <button class="btn btn-outline-primary btn-run-probe" style="font-size: 0.72rem; padding: 0.2rem 0.55rem;" onclick="runSingleRouteProbe(${globalIndex}, 'route-probe-res-${globalIndex}')">
                 ▶ Test
               </button>
               <button class="btn-icon" onclick="inspectSingleRouteProbe(${globalIndex})" title="Inspect payload">
                 🔍
               </button>
-              ${tc.isCustom ? `<button class="btn-icon" onclick="deleteCustomProbe('${escapeJs(tc.id)}')" title="Delete custom probe" style="color:var(--destructive); font-size: 0.8rem; padding: 0.2rem 0.35rem;">🗑️</button>` : ''}
             </div>
           `;
+          if (tc.isCustom) {
+            const delBtn = document.createElement("button");
+            delBtn.className = "btn-icon";
+            delBtn.title = "Delete custom probe";
+            delBtn.style.cssText = "color:var(--destructive); font-size: 0.8rem; padding: 0.2rem 0.35rem;";
+            delBtn.textContent = "🗑️";
+            delBtn.addEventListener("click", () => deleteCustomProbe(tc.id));
+            itemEl.querySelector(".probe-actions").appendChild(delBtn);
+          }
           bodyEl.appendChild(itemEl);
         });
 
         container.appendChild(groupCard);
       });
+    }
+
+    async function executeProbeFetch(tc) {
+      const start = performance.now();
+      let status = 0;
+      let respText = "";
+      try {
+        const method = safeHttpMethod(tc.method).toUpperCase();
+        const headers = { ...(tc.headers || {}) };
+        const hasBody = tc.payload !== null && tc.payload !== undefined && !["GET", "HEAD"].includes(method);
+        if (hasBody && !Object.keys(headers).some(k => k.toLowerCase() === "content-type")) {
+          headers["Content-Type"] = "application/json";
+        }
+
+        let targetUrl = tc.endpoint;
+        if (tc.queryParams && Object.keys(tc.queryParams).length > 0) {
+          const qs = new URLSearchParams();
+          Object.entries(tc.queryParams).forEach(([k, v]) => qs.append(k, String(v)));
+          targetUrl += (targetUrl.includes("?") ? "&" : "?") + qs.toString();
+        }
+
+        const opts = { method, headers };
+        if (hasBody) {
+          opts.body = JSON.stringify(tc.payload);
+        }
+
+        const res = await fetch(targetUrl, opts);
+        status = res.status;
+        respText = await res.text();
+      } catch (e) {
+        status = 0;
+        respText = e.message;
+      }
+      const latency = Math.round(performance.now() - start);
+      return { status, respText, latency };
+    }
+
+    function classifyProbeResult(tc, status) {
+      if (status >= 500) {
+        return { kind: "crash", pillClass: "pill-crash", statusLabel: "CRASH (500)" };
+      }
+      if (tc.allowAccepted) {
+        if ((status >= 200 && status < 300) || status === 400 || status === 422) {
+          return { kind: "pass", pillClass: "pill-pass", statusLabel: `PASS (${status})` };
+        }
+        return { kind: "other", pillClass: "pill-leak", statusLabel: `${status}` };
+      }
+      if (tc.isNegative === false) {
+        if (status >= 200 && status < 300) {
+          return { kind: "pass", pillClass: "pill-pass", statusLabel: `PASS (${status})` };
+        }
+        return { kind: "other", pillClass: "pill-leak", statusLabel: `FAIL (${status})` };
+      }
+      if (status >= 200 && status < 300) {
+        return { kind: "leak", pillClass: "pill-leak", statusLabel: `LEAK (${status})` };
+      }
+      if (status === 400 || status === 422 || status === 401) {
+        return { kind: "pass", pillClass: "pill-pass", statusLabel: `PASS (${status})` };
+      }
+      return { kind: "other", pillClass: "pill-leak", statusLabel: `${status}` };
     }
 
     async function runSingleRouteProbe(idx, resultElementId) {
@@ -2723,43 +2833,11 @@
       const resEl = document.getElementById(resultElementId);
       if (resEl) resEl.innerHTML = `<span style="font-size:0.75rem; color: var(--text-muted);">Testing...</span>`;
 
-      const start = performance.now();
-      let status = 0;
-      let respText = "";
-      try {
-        const opts = {
-          method: tc.method.toUpperCase(),
-          headers: { 'Content-Type': 'application/json' }
-        };
-        if (tc.payload) opts.body = JSON.stringify(tc.payload);
-
-        const res = await fetch(tc.endpoint, opts);
-        status = res.status;
-        respText = await res.text();
-      } catch (e) {
-        status = 0;
-        respText = e.message;
-      }
-      const latency = Math.round(performance.now() - start);
-
-      let pillClass = "pill-pass";
-      let statusLabel = "PASS";
-      if (status >= 500) {
-        pillClass = "pill-crash";
-        statusLabel = "CRASH (500)";
-      } else if (status >= 200 && status < 300) {
-        pillClass = "pill-leak";
-        statusLabel = "LEAK (200)";
-      } else if (status === 400 || status === 422 || status === 401) {
-        pillClass = "pill-pass";
-        statusLabel = `PASS (${status})`;
-      } else {
-        pillClass = "pill-leak";
-        statusLabel = `${status}`;
-      }
+      const { status, latency } = await executeProbeFetch(tc);
+      const { pillClass, statusLabel } = classifyProbeResult(tc, status);
 
       if (resEl) {
-        resEl.innerHTML = `<span class="pill ${pillClass}">${statusLabel}</span> <span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.25rem;">${latency}ms</span>`;
+        resEl.innerHTML = `<span class="pill ${pillClass}">${escapeHtml(statusLabel)}</span> <span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.25rem;">${latency}ms</span>`;
       }
     }
 
@@ -2812,6 +2890,7 @@
       }
 
       activeCases.forEach((tc, i) => {
+        const method = safeHttpMethod(tc.opMethod);
         const tr = document.createElement("tr");
         tr.id = `test-row-${i}`;
         tr.innerHTML = `
@@ -2819,17 +2898,25 @@
             <span class="pill pill-planned">PLANNED</span>
             ${tc.isCustom ? `<span style="font-size:0.62rem; font-weight:700; color:var(--primary); background:var(--accent); border:1px solid var(--border); padding:0.06rem 0.35rem; border-radius:3px; margin-left:0.3rem;">CUSTOM</span>` : ''}
           </td>
-          <td><span class="badge-method badge-${tc.opMethod}">${tc.opMethod.toUpperCase()}</span> <code style="font-size:0.8rem; color: var(--foreground); margin-left: 0.35rem;">${escapeHtml(tc.opPath)}</code></td>
+          <td><span class="badge-method badge-${method}">${escapeHtml(method.toUpperCase())}</span> <code style="font-size:0.8rem; color: var(--foreground); margin-left: 0.35rem;">${escapeHtml(tc.opPath)}</code></td>
           <td><span class="field-tag">${escapeHtml(tc.field)}</span></td>
           <td><strong>${escapeHtml(tc.category)}</strong><br><span style="color:var(--muted-foreground);font-size:0.75rem;">${escapeHtml(tc.desc)}</span></td>
-          <td>Expected ${tc.expected}</td>
+          <td>${tc.allowAccepted ? '2xx / 4xx (No 500)' : `Expected ${escapeHtml(tc.expected)}`}</td>
           <td>--</td>
-          <td style="white-space: nowrap;">
+          <td class="table-actions" style="white-space: nowrap;">
             <button class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="runSingleBoundaryTest(${i})">▶ Run</button>
             <button class="btn btn-outline" style="font-size:0.72rem;padding:0.2rem 0.5rem;" onclick="inspectTestPayload(${i})">Inspect</button>
-            ${tc.isCustom ? `<button class="btn-icon" style="color:var(--destructive);" onclick="deleteCustomProbe('${escapeJs(tc.id)}')" title="Delete custom probe">🗑️</button>` : ''}
           </td>
         `;
+        if (tc.isCustom) {
+          const delBtn = document.createElement("button");
+          delBtn.className = "btn-icon";
+          delBtn.title = "Delete custom probe";
+          delBtn.style.color = "var(--destructive)";
+          delBtn.textContent = "🗑️";
+          delBtn.addEventListener("click", () => deleteCustomProbe(tc.id));
+          tr.querySelector(".table-actions").appendChild(delBtn);
+        }
         tbody.appendChild(tr);
       });
     }
@@ -2872,44 +2959,14 @@
         row.cells[0].innerHTML = `<span style="font-size:0.75rem; color:var(--text-muted);">Testing...</span>`;
       }
 
-      const start = performance.now();
-      let status = 0;
-      let respText = "";
-      try {
-        const opts = {
-          method: tc.method.toUpperCase(),
-          headers: { 'Content-Type': 'application/json' }
-        };
-        if (tc.payload) opts.body = JSON.stringify(tc.payload);
-
-        const res = await fetch(tc.endpoint, opts);
-        status = res.status;
-        respText = await res.text();
-      } catch (e) {
-        status = 0;
-        respText = e.message;
-      }
-      const latency = Math.round(performance.now() - start);
-
-      let pillClass = "pill-pass";
-      let statusLabel = "PASS";
-      if (status >= 500) {
-        pillClass = "pill-crash";
-        statusLabel = "CRASH (500)";
-      } else if (status >= 200 && status < 300) {
-        pillClass = "pill-leak";
-        statusLabel = "LEAK (200)";
-      } else if (status === 400 || status === 422 || status === 401) {
-        pillClass = "pill-pass";
-        statusLabel = `PASS (${status})`;
-      } else {
-        pillClass = "pill-leak";
-        statusLabel = `${status}`;
-      }
+      const { status, latency } = await executeProbeFetch(tc);
+      const { pillClass, statusLabel } = classifyProbeResult(tc, status);
 
       if (row) {
-        row.cells[0].innerHTML = `<span class="pill ${pillClass}">${statusLabel}</span>`;
-        row.cells[4].textContent = `Expected ${tc.expected} | Got ${status}`;
+        row.cells[0].innerHTML = `<span class="pill ${pillClass}">${escapeHtml(statusLabel)}</span>`;
+        row.cells[4].textContent = tc.allowAccepted
+          ? `2xx/4xx | Got ${status}`
+          : `Expected ${tc.expected} | Got ${status}`;
         row.cells[5].textContent = `${latency} ms`;
       }
     }
@@ -2929,48 +2986,18 @@
           row.cells[0].innerHTML = `<span style="font-size:0.75rem; color:var(--text-muted);">Testing...</span>`;
         }
 
-        const start = performance.now();
-        let status = 0;
-        let respText = "";
+        const { status, latency } = await executeProbeFetch(tc);
+        const { kind, pillClass, statusLabel } = classifyProbeResult(tc, status);
 
-        try {
-          const opts = {
-            method: tc.method.toUpperCase(),
-            headers: { 'Content-Type': 'application/json' }
-          };
-          if (tc.payload) opts.body = JSON.stringify(tc.payload);
-
-          const res = await fetch(tc.endpoint, opts);
-          status = res.status;
-          respText = await res.text();
-        } catch (e) {
-          status = 0;
-          respText = e.message;
-        }
-        const latency = Math.round(performance.now() - start);
-
-        let pillClass = "pill-pass";
-        let statusLabel = "PASS";
-        if (status >= 500) {
-          pillClass = "pill-crash";
-          statusLabel = "CRASH (500)";
-          crashCount++;
-        } else if (status >= 200 && status < 300) {
-          pillClass = "pill-leak";
-          statusLabel = "LEAK (200)";
-          leakCount++;
-        } else if (status === 400 || status === 422 || status === 401) {
-          pillClass = "pill-pass";
-          statusLabel = `PASS (${status})`;
-          passCount++;
-        } else {
-          pillClass = "pill-leak";
-          statusLabel = `${status}`;
-        }
+        if (kind === "crash") crashCount++;
+        else if (kind === "leak") leakCount++;
+        else if (kind === "pass") passCount++;
 
         if (row) {
-          row.cells[0].innerHTML = `<span class="pill ${pillClass}">${statusLabel}</span>`;
-          row.cells[4].textContent = `Expected ${tc.expected} | Got ${status}`;
+          row.cells[0].innerHTML = `<span class="pill ${pillClass}">${escapeHtml(statusLabel)}</span>`;
+          row.cells[4].textContent = tc.allowAccepted
+            ? `2xx/4xx | Got ${status}`
+            : `Expected ${tc.expected} | Got ${status}`;
           row.cells[5].textContent = `${latency} ms`;
         }
 
@@ -2996,11 +3023,14 @@
       const activeCases = getActiveTestCases();
       const sel = document.getElementById("test-scope-select");
       const scopeLabel = sel && sel.value !== "all" ? `Scope: ${sel.value.toUpperCase()}` : "Scope: All Endpoints";
-      let code = `# Auto-generated by SpecForge (${scopeLabel})\nimport pytest\nimport httpx\n\nBASE_URL = "http://localhost:8000"\n\n@pytest.mark.parametrize("endpoint,method,payload,expected", [\n`;
+      let code = `# Auto-generated by SpecForge (${scopeLabel})\nimport pytest\nimport httpx\n\nBASE_URL = ${toPythonLiteral(window.location.origin || "http://localhost:8000")}\n\n@pytest.mark.parametrize(\n    "endpoint,method,payload,query_params,headers,expected,is_negative,allow_accepted",\n    [\n`;
       activeCases.forEach(tc => {
-        code += `    ("${tc.endpoint}", "${tc.method.toUpperCase()}", ${JSON.stringify(tc.payload)}, ${tc.expected}),\n`;
+        const method = safeHttpMethod(tc.method).toUpperCase();
+        const isNegative = tc.isNegative !== false;
+        const allowAccepted = Boolean(tc.allowAccepted);
+        code += `        (${toPythonLiteral(tc.endpoint)}, ${toPythonLiteral(method)}, ${toPythonLiteral(tc.payload ?? null)}, ${toPythonLiteral(tc.queryParams || {})}, ${toPythonLiteral(tc.headers || {})}, ${Number(tc.expected) || 422}, ${isNegative ? "True" : "False"}, ${allowAccepted ? "True" : "False"}),\n`;
       });
-      code += `])\ndef test_contract_boundaries(endpoint, method, payload, expected):\n    with httpx.Client(base_url=BASE_URL) as client:\n        res = client.request(method, endpoint, json=payload)\n        assert res.status_code != 500, "Server crashed with 500!"\n        assert res.status_code == expected\n`;
+      code += `    ],\n)\ndef test_contract_boundaries(endpoint, method, payload, query_params, headers, expected, is_negative, allow_accepted):\n    with httpx.Client(base_url=BASE_URL, timeout=10.0) as client:\n        kwargs = {}\n        if payload is not None and method.upper() not in ("GET", "HEAD"):\n            kwargs["json"] = payload\n        if query_params:\n            kwargs["params"] = query_params\n        if headers:\n            kwargs["headers"] = headers\n        res = client.request(method, endpoint, **kwargs)\n        assert res.status_code != 500, "Server crashed with 500!"\n        if allow_accepted:\n            assert 200 <= res.status_code < 300 or res.status_code in (400, 422)\n        elif is_negative:\n            assert res.status_code in (400, 422)\n        else:\n            assert 200 <= res.status_code < 300\n`;
 
       document.getElementById("pytest-code-output").textContent = code;
       document.getElementById("pytest-modal").style.display = "flex";

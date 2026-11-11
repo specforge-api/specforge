@@ -30,6 +30,7 @@ class TestCase:
     query_params: dict[str, Any] = field(default_factory=dict)
     expected_status: int = 422
     is_negative_test: bool = True
+    allow_accepted: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         """Convert test case to dictionary for frontend execution or serialization."""
@@ -46,6 +47,7 @@ class TestCase:
             "query_params": self.query_params,
             "expected_status": self.expected_status,
             "is_negative_test": self.is_negative_test,
+            "allow_accepted": self.allow_accepted,
         }
 
 
@@ -95,7 +97,29 @@ def evaluate_test_result(
             curl_command=curl_cmd,
         )
 
-    # Invariant 2: Negative test expects a rejection (400 or 422). If 200/201 was returned, it's a schema leak
+    # Invariant 2: Resilience probes allow either clean rejection (400/422) or safe acceptance (2xx)
+    if test_case.allow_accepted:
+        if 200 <= status_code < 300 or status_code in (400, 422):
+            return TestResult(
+                test_case=test_case,
+                actual_status=status_code,
+                latency_ms=latency_ms,
+                response_body=response_body,
+                status=TestStatus.PASS,
+                message=f"PASS: Server safely handled {test_case.mutation_name} with HTTP {status_code}.",
+                curl_command=curl_cmd,
+            )
+        return TestResult(
+            test_case=test_case,
+            actual_status=status_code,
+            latency_ms=latency_ms,
+            response_body=response_body,
+            status=TestStatus.FAIL_STATUS,
+            message=f"UNEXPECTED: Got HTTP {status_code} on resilience probe {test_case.mutation_name}.",
+            curl_command=curl_cmd,
+        )
+
+    # Invariant 3: Strict negative test expects a rejection (400 or 422). If 200/201 was returned, it's a schema leak
     if test_case.is_negative_test:
         if 200 <= status_code < 300:
             return TestResult(
@@ -154,13 +178,31 @@ def evaluate_test_result(
             )
 
 
-def build_curl_command(test_case: TestCase, base_url: str = "http://localhost:8000") -> str:
+_SENSITIVE_HEADERS = frozenset({
+    "authorization",
+    "proxy-authorization",
+    "x-api-key",
+    "cookie",
+    "set-cookie",
+})
+
+
+def build_curl_command(
+    test_case: TestCase,
+    base_url: str = "http://localhost:8000",
+    redact_secrets: bool = True,
+) -> str:
     """Generate a clean, shell-escaped cURL reproduction command for a test case."""
     url = f"{base_url.rstrip('/')}{test_case.endpoint}"
     cmd_parts = [f"curl -X {shlex.quote(test_case.method.upper())} {shlex.quote(url)}"]
 
     for h_name, h_val in test_case.headers.items():
-        cmd_parts.append(f"-H {shlex.quote(f'{h_name}: {h_val}')}")
+        display_val = (
+            "<REDACTED>"
+            if redact_secrets and h_name.lower() in _SENSITIVE_HEADERS
+            else h_val
+        )
+        cmd_parts.append(f"-H {shlex.quote(f'{h_name}: {display_val}')}")
 
     if test_case.payload is not None:
         cmd_parts.append("-H 'Content-Type: application/json'")
